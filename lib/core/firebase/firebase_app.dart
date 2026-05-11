@@ -1,7 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
+
+import '../../firebase_options.dart';
+
 class FirebaseAppInitializer {
   const FirebaseAppInitializer._();
 
   static Future<void> initialize() async {
-    // Firebase setup will be added after the Firebase project is prepared.
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
 }

@@ -35,6 +35,7 @@ migrate_working_dir/
 firebase-debug.log
 firebase-debug.*.log
 firepit-log.txt
+.firebase/
 .runtimeconfig.json
 functions/lib/
 functions/node_modules/

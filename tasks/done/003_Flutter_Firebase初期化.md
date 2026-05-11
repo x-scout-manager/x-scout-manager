@@ -2,7 +2,11 @@
 
 ## 現状の動作
 
-Flutter側にFirebase SDKが未導入で、`core/firebase` はプレースホルダー。
+Flutter側にFirebase SDKを導入済み。
+
+`lib/firebase_options.dart` は Firebase Web App `x-scout-manager-web` から生成済み。
+
+`lib/core/firebase/firebase_app.dart` で Firebase 初期化を集約し、`lib/main.dart` から起動前に呼び出す。
 
 ## 期待する動作
 
@@ -36,6 +40,20 @@ Firebase SDK依存は `core/firebase` に集約する。
 - `flutter analyze` が通る
 - `flutter test` が通る
 - Firebase初期化後もWeb起動できる
+
+## 実施済み
+
+- [x] Firebase依存を追加
+- [x] `flutterfire configure` を実行
+- [x] `lib/firebase_options.dart` を生成
+- [x] `FirebaseAppInitializer` を実装
+- [x] `flutter analyze` 成功
+- [x] `flutter test` 成功
+- [x] `flutter build web` 成功
+
+## 残作業
+
+なし。
 
 ## レビュー指摘
 
