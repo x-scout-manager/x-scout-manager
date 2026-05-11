@@ -41,4 +41,10 @@
 
 | パス | 役割 |
 |---|---|
-| 未作成 | Cloud Functions TypeScript環境構築後に追記 |
+| `.firebaserc` | Firebase default projectとして `x-scout-manager-prod` を指定 |
+| `firebase.json` | Hosting、Firestore、Functions、EmulatorのFirebase設定 |
+| `firestore.rules` | Firestore Security Rules。未ログイン拒否、admin参照、重要書き込みFunctions限定 |
+| `firestore.indexes.json` | 初期MVPで想定するFirestore複合インデックス |
+| `functions/package.json` | Cloud Functions依存関係とbuild/lint/test scripts |
+| `functions/tsconfig.json` | Cloud Functions TypeScriptコンパイル設定 |
+| `functions/src/index.ts` | Functions entrypoint。`healthCheck` と `adminHealthCheck` の初期関数を定義 |
