@@ -1,0 +1,3 @@
+class SessionVm {
+  const SessionVm();
+}

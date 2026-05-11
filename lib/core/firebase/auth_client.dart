@@ -1,0 +1,3 @@
+class AuthClient {
+  const AuthClient();
+}

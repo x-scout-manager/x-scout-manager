@@ -1,0 +1,3 @@
+class ConversionListVm {
+  const ConversionListVm();
+}

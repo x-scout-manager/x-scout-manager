@@ -1,0 +1,3 @@
+class SystemSettingVm {
+  const SystemSettingVm();
+}

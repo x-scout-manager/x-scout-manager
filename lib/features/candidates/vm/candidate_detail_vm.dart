@@ -1,0 +1,3 @@
+class CandidateDetailVm {
+  const CandidateDetailVm();
+}

@@ -1,0 +1,3 @@
+class DashboardVm {
+  const DashboardVm();
+}

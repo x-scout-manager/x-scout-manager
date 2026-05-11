@@ -1,0 +1,3 @@
+class TemplateListVm {
+  const TemplateListVm();
+}

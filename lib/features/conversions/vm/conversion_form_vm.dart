@@ -1,0 +1,3 @@
+class ConversionFormVm {
+  const ConversionFormVm();
+}

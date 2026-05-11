@@ -1,0 +1,3 @@
+class SendHistoryVm {
+  const SendHistoryVm();
+}

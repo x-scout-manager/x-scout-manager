@@ -1,0 +1,3 @@
+class ExcludedAccountVm {
+  const ExcludedAccountVm();
+}

@@ -1,0 +1,3 @@
+class CandidateListVm {
+  const CandidateListVm();
+}

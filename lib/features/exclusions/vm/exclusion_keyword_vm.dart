@@ -1,0 +1,3 @@
+class ExclusionKeywordVm {
+  const ExclusionKeywordVm();
+}

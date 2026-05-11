@@ -1,0 +1,3 @@
+class FirestoreClient {
+  const FirestoreClient();
+}
