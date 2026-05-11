@@ -14,4 +14,6 @@ class AppUser {
   final bool isActive;
   final String? email;
   final String? displayName;
+
+  bool get canManage => role == Role.admin && isActive;
 }

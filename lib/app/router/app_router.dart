@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../features/auth/view/pages/login_page.dart';
+import '../../features/auth/view/widgets/auth_gate.dart';
 import '../../features/candidates/view/pages/candidate_list_page.dart';
 import '../../features/conversions/view/pages/conversion_list_page.dart';
 import '../../features/dashboard/view/pages/dashboard_page.dart';
@@ -20,15 +21,18 @@ class AppRouter {
 
   static Map<String, WidgetBuilder> get routes => {
     RoutePaths.login: (_) => const LoginPage(),
-    RoutePaths.dashboard: (_) => const DashboardPage(),
-    RoutePaths.candidates: (_) => const CandidateListPage(),
-    RoutePaths.sendQueue: (_) => const SendQueuePage(),
-    RoutePaths.sendHistories: (_) => const SendHistoryPage(),
-    RoutePaths.excludedAccounts: (_) => const ExcludedAccountPage(),
-    RoutePaths.templates: (_) => const TemplateListPage(),
-    RoutePaths.conversions: (_) => const ConversionListPage(),
-    RoutePaths.tagSettings: (_) => const TagSettingPage(),
-    RoutePaths.exclusionSettings: (_) => const ExclusionKeywordSettingPage(),
-    RoutePaths.systemSettings: (_) => const SystemSettingPage(),
+    RoutePaths.dashboard: (_) => const AuthGate(child: DashboardPage()),
+    RoutePaths.candidates: (_) => const AuthGate(child: CandidateListPage()),
+    RoutePaths.sendQueue: (_) => const AuthGate(child: SendQueuePage()),
+    RoutePaths.sendHistories: (_) => const AuthGate(child: SendHistoryPage()),
+    RoutePaths.excludedAccounts: (_) =>
+        const AuthGate(child: ExcludedAccountPage()),
+    RoutePaths.templates: (_) => const AuthGate(child: TemplateListPage()),
+    RoutePaths.conversions: (_) => const AuthGate(child: ConversionListPage()),
+    RoutePaths.tagSettings: (_) => const AuthGate(child: TagSettingPage()),
+    RoutePaths.exclusionSettings: (_) =>
+        const AuthGate(child: ExclusionKeywordSettingPage()),
+    RoutePaths.systemSettings: (_) =>
+        const AuthGate(child: SystemSettingPage()),
   };
 }

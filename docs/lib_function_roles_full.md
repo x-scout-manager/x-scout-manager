@@ -36,6 +36,16 @@
 | `test/widget_test.dart` | 初期画面がダッシュボードとして表示されることを確認するWidgetテスト |
 | `pubspec.yaml` | Flutter/Dart依存関係とアセット定義 |
 | `analysis_options.yaml` | Dart/Flutter静的解析設定 |
+| `lib/firebase_options.dart` | FlutterFire CLIが生成するFirebase Web設定 |
+| `lib/core/firebase/firebase_app.dart` | Firebase初期化処理を集約する境界 |
+| `lib/main.dart` | Flutter起動前にFirebase初期化を実行するエントリーポイント |
+| `lib/app/di/providers.dart` | RepositoryとUseCaseを画面ツリーへ渡す依存関係境界 |
+| `lib/features/auth/data/firebase_auth_repository.dart` | Firebase Authenticationのログイン・ログアウト・現在ユーザー取得 |
+| `lib/features/auth/data/firestore_user_repository.dart` | Firestore `users/{uid}` から管理者権限情報を取得 |
+| `lib/features/auth/usecase/sign_in.dart` | ログイン後に `users/{uid}` を確認しadminのみ通過させる |
+| `lib/features/auth/usecase/load_session.dart` | 現在ログイン中ユーザーのadminセッションを復元する |
+| `lib/features/auth/view/widgets/auth_gate.dart` | 管理画面ルートを未ログイン・非adminから保護する |
+| `lib/features/auth/view/widgets/login_form.dart` | メールアドレス/パスワードログインフォーム |
 
 ## Cloud Functions
 
