@@ -5,9 +5,16 @@ import '../../model/candidate.dart';
 import 'candidate_status_badge.dart';
 
 class CandidateTable extends StatelessWidget {
-  const CandidateTable({required this.candidates, super.key});
+  const CandidateTable({
+    required this.candidates,
+    required this.selectedCandidateIds,
+    required this.onSelectionChanged,
+    super.key,
+  });
 
   final List<Candidate> candidates;
+  final Set<String> selectedCandidateIds;
+  final void Function(Candidate candidate, bool selected) onSelectionChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +26,7 @@ class CandidateTable extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: DataTable(
         columns: const [
+          DataColumn(label: Text('選択')),
           DataColumn(label: Text('ユーザー名')),
           DataColumn(label: Text('表示名')),
           DataColumn(label: Text('ステータス')),
@@ -29,6 +37,16 @@ class CandidateTable extends StatelessWidget {
         rows: candidates.map((candidate) {
           return DataRow(
             cells: [
+              DataCell(
+                Checkbox(
+                  value: selectedCandidateIds.contains(candidate.candidateId),
+                  onChanged: candidate.canSend
+                      ? (selected) {
+                          onSelectionChanged(candidate, selected == true);
+                        }
+                      : null,
+                ),
+              ),
               DataCell(Text('@${candidate.username}')),
               DataCell(Text(candidate.displayName ?? '-')),
               DataCell(CandidateStatusBadge(status: candidate.status)),

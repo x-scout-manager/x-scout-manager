@@ -13,6 +13,7 @@ import 'package:x_scout_manager/features/exclusions/model/exclusion_keyword.dart
 import 'package:x_scout_manager/features/settings/data/settings_repository.dart';
 import 'package:x_scout_manager/features/settings/model/scout_settings.dart';
 import 'package:x_scout_manager/features/settings/model/tag_setting.dart';
+import 'package:x_scout_manager/features/send_queue/data/send_queue_functions_repository.dart';
 import 'package:x_scout_manager/features/templates/data/template_repository.dart';
 import 'package:x_scout_manager/features/templates/model/dm_template.dart';
 
@@ -27,6 +28,7 @@ void main() {
           exclusionRepository: _FakeExclusionRepository(),
           templateRepository: _FakeTemplateRepository(),
           candidateRepository: _FakeCandidateRepository(),
+          sendQueueFunctionsRepository: _FakeSendQueueFunctionsRepository(),
         ),
       ),
     );
@@ -110,4 +112,18 @@ class _FakeCandidateRepository implements CandidateRepository {
   Future<Candidate?> findById(String candidateId) async {
     return null;
   }
+}
+
+class _FakeSendQueueFunctionsRepository
+    implements SendQueueFunctionsRepository {
+  @override
+  Future<String> createSendQueue(List<String> candidateIds) async {
+    return 'queue-id';
+  }
+
+  @override
+  Future<void> markAsManuallySent(String queueId, String itemId) async {}
+
+  @override
+  Future<void> sendDirectMessage(String queueId, String itemId) async {}
 }

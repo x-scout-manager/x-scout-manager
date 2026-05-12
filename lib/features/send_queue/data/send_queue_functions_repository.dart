@@ -1,3 +1,8 @@
+import 'package:cloud_functions/cloud_functions.dart';
+
+import '../../../core/errors/app_error.dart';
+import '../../../core/errors/functions_error_mapper.dart';
+
 abstract interface class SendQueueFunctionsRepository {
   Future<String> createSendQueue(List<String> candidateIds);
   Future<void> sendDirectMessage(String queueId, String itemId);
@@ -6,11 +11,29 @@ abstract interface class SendQueueFunctionsRepository {
 
 class FirebaseSendQueueFunctionsRepository
     implements SendQueueFunctionsRepository {
-  const FirebaseSendQueueFunctionsRepository();
+  FirebaseSendQueueFunctionsRepository({FirebaseFunctions? functions})
+    : _functions =
+          functions ?? FirebaseFunctions.instanceFor(region: 'asia-northeast1');
+
+  final FirebaseFunctions _functions;
 
   @override
   Future<String> createSendQueue(List<String> candidateIds) async {
-    throw UnimplementedError('Cloud Functions setup is not configured yet.');
+    try {
+      final callable = _functions.httpsCallable('createSendQueue');
+      final result = await callable.call<Map<String, dynamic>>({
+        'candidateIds': candidateIds,
+      });
+      final queueId = result.data['queueId'];
+      if (queueId is! String || queueId.isEmpty) {
+        throw const AppError('送信キューIDを確認できませんでした。');
+      }
+      return queueId;
+    } on AppError {
+      rethrow;
+    } catch (error) {
+      throw FunctionsErrorMapper.map(error);
+    }
   }
 
   @override

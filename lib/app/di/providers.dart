@@ -18,6 +18,8 @@ import '../../features/settings/data/settings_repository.dart';
 import '../../features/settings/usecase/load_scout_settings.dart';
 import '../../features/settings/usecase/save_scout_settings.dart';
 import '../../features/settings/usecase/save_tags.dart';
+import '../../features/send_queue/data/send_queue_functions_repository.dart';
+import '../../features/send_queue/usecase/create_send_queue.dart';
 import '../../features/templates/data/firestore_template_repository.dart';
 import '../../features/templates/data/template_repository.dart';
 import '../../features/templates/usecase/load_templates.dart';
@@ -31,6 +33,7 @@ class AppDependencies {
     ExclusionRepository? exclusionRepository,
     TemplateRepository? templateRepository,
     CandidateRepository? candidateRepository,
+    SendQueueFunctionsRepository? sendQueueFunctionsRepository,
   }) : authRepository = authRepository ?? FirebaseAuthRepository(),
        userRepository = userRepository ?? FirestoreUserRepository(),
        settingsRepository = settingsRepository ?? FirestoreSettingsRepository(),
@@ -38,7 +41,10 @@ class AppDependencies {
            exclusionRepository ?? FirestoreExclusionRepository(),
        templateRepository = templateRepository ?? FirestoreTemplateRepository(),
        candidateRepository =
-           candidateRepository ?? FirestoreCandidateRepository();
+           candidateRepository ?? FirestoreCandidateRepository(),
+       sendQueueFunctionsRepository =
+           sendQueueFunctionsRepository ??
+           FirebaseSendQueueFunctionsRepository();
 
   final AuthRepository authRepository;
   final UserRepository userRepository;
@@ -46,6 +52,7 @@ class AppDependencies {
   final ExclusionRepository exclusionRepository;
   final TemplateRepository templateRepository;
   final CandidateRepository candidateRepository;
+  final SendQueueFunctionsRepository sendQueueFunctionsRepository;
 
   SignIn get signIn => SignIn(authRepository, userRepository);
 
@@ -69,6 +76,9 @@ class AppDependencies {
   SaveTemplate get saveTemplate => SaveTemplate(templateRepository);
 
   LoadCandidates get loadCandidates => LoadCandidates(candidateRepository);
+
+  CreateSendQueue get createSendQueue =>
+      CreateSendQueue(sendQueueFunctionsRepository);
 }
 
 class AppProviders extends InheritedWidget {

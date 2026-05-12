@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class QueueProgress extends StatelessWidget {
-  const QueueProgress({
-    required this.current,
-    required this.total,
-    super.key,
-  });
+  const QueueProgress({required this.current, required this.total, super.key});
 
   final int current;
   final int total;
