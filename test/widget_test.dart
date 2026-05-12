@@ -11,6 +11,8 @@ import 'package:x_scout_manager/features/exclusions/model/exclusion_keyword.dart
 import 'package:x_scout_manager/features/settings/data/settings_repository.dart';
 import 'package:x_scout_manager/features/settings/model/scout_settings.dart';
 import 'package:x_scout_manager/features/settings/model/tag_setting.dart';
+import 'package:x_scout_manager/features/templates/data/template_repository.dart';
+import 'package:x_scout_manager/features/templates/model/dm_template.dart';
 
 void main() {
   testWidgets('shows dashboard as initial page', (tester) async {
@@ -21,6 +23,7 @@ void main() {
           userRepository: _FakeUserRepository(),
           settingsRepository: _FakeSettingsRepository(),
           exclusionRepository: _FakeExclusionRepository(),
+          templateRepository: _FakeTemplateRepository(),
         ),
       ),
     );
@@ -82,4 +85,14 @@ class _FakeExclusionRepository implements ExclusionRepository {
 
   @override
   Future<void> saveKeywords(List<ExclusionKeyword> keywords) async {}
+}
+
+class _FakeTemplateRepository implements TemplateRepository {
+  @override
+  Stream<List<DmTemplate>> watchTemplates() {
+    return Stream.value(const []);
+  }
+
+  @override
+  Future<void> saveTemplate(DmTemplate template) async {}
 }

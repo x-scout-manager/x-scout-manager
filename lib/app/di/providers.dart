@@ -15,6 +15,10 @@ import '../../features/settings/data/settings_repository.dart';
 import '../../features/settings/usecase/load_scout_settings.dart';
 import '../../features/settings/usecase/save_scout_settings.dart';
 import '../../features/settings/usecase/save_tags.dart';
+import '../../features/templates/data/firestore_template_repository.dart';
+import '../../features/templates/data/template_repository.dart';
+import '../../features/templates/usecase/load_templates.dart';
+import '../../features/templates/usecase/save_template.dart';
 
 class AppDependencies {
   AppDependencies({
@@ -22,16 +26,19 @@ class AppDependencies {
     UserRepository? userRepository,
     SettingsRepository? settingsRepository,
     ExclusionRepository? exclusionRepository,
+    TemplateRepository? templateRepository,
   }) : authRepository = authRepository ?? FirebaseAuthRepository(),
        userRepository = userRepository ?? FirestoreUserRepository(),
        settingsRepository = settingsRepository ?? FirestoreSettingsRepository(),
        exclusionRepository =
-           exclusionRepository ?? FirestoreExclusionRepository();
+           exclusionRepository ?? FirestoreExclusionRepository(),
+       templateRepository = templateRepository ?? FirestoreTemplateRepository();
 
   final AuthRepository authRepository;
   final UserRepository userRepository;
   final SettingsRepository settingsRepository;
   final ExclusionRepository exclusionRepository;
+  final TemplateRepository templateRepository;
 
   SignIn get signIn => SignIn(authRepository, userRepository);
 
@@ -49,6 +56,10 @@ class AppDependencies {
 
   SaveExclusionKeywords get saveExclusionKeywords =>
       SaveExclusionKeywords(exclusionRepository);
+
+  LoadTemplates get loadTemplates => LoadTemplates(templateRepository);
+
+  SaveTemplate get saveTemplate => SaveTemplate(templateRepository);
 }
 
 class AppProviders extends InheritedWidget {
