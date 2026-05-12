@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../features/auth/view/pages/login_page.dart';
 import '../../features/auth/view/widgets/auth_gate.dart';
+import '../../features/candidates/view/pages/candidate_detail_page.dart';
 import '../../features/candidates/view/pages/candidate_list_page.dart';
 import '../../features/conversions/view/pages/conversion_list_page.dart';
 import '../../features/dashboard/view/pages/dashboard_page.dart';
@@ -23,6 +24,8 @@ class AppRouter {
     RoutePaths.login: (_) => const LoginPage(),
     RoutePaths.dashboard: (_) => const AuthGate(child: DashboardPage()),
     RoutePaths.candidates: (_) => const AuthGate(child: CandidateListPage()),
+    RoutePaths.candidateDetail: (_) =>
+        const AuthGate(child: CandidateDetailPage()),
     RoutePaths.sendQueue: (_) => const AuthGate(child: SendQueuePage()),
     RoutePaths.sendHistories: (_) => const AuthGate(child: SendHistoryPage()),
     RoutePaths.excludedAccounts: (_) =>

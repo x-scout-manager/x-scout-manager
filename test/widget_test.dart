@@ -5,6 +5,8 @@ import 'package:x_scout_manager/core/auth/role.dart';
 import 'package:x_scout_manager/features/auth/data/auth_repository.dart';
 import 'package:x_scout_manager/features/auth/data/user_repository.dart';
 import 'package:x_scout_manager/features/auth/model/app_user.dart';
+import 'package:x_scout_manager/features/candidates/data/candidate_repository.dart';
+import 'package:x_scout_manager/features/candidates/model/candidate.dart';
 import 'package:x_scout_manager/features/exclusions/data/exclusion_repository.dart';
 import 'package:x_scout_manager/features/exclusions/model/excluded_account.dart';
 import 'package:x_scout_manager/features/exclusions/model/exclusion_keyword.dart';
@@ -24,6 +26,7 @@ void main() {
           settingsRepository: _FakeSettingsRepository(),
           exclusionRepository: _FakeExclusionRepository(),
           templateRepository: _FakeTemplateRepository(),
+          candidateRepository: _FakeCandidateRepository(),
         ),
       ),
     );
@@ -95,4 +98,16 @@ class _FakeTemplateRepository implements TemplateRepository {
 
   @override
   Future<void> saveTemplate(DmTemplate template) async {}
+}
+
+class _FakeCandidateRepository implements CandidateRepository {
+  @override
+  Stream<List<Candidate>> watchCandidates() {
+    return Stream.value(const []);
+  }
+
+  @override
+  Future<Candidate?> findById(String candidateId) async {
+    return null;
+  }
 }

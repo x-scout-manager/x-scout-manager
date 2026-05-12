@@ -4,6 +4,7 @@ class RoutePaths {
   static const login = '/login';
   static const dashboard = '/dashboard';
   static const candidates = '/candidates';
+  static const candidateDetail = '/candidates/detail';
   static const sendQueue = '/send-queue';
   static const sendHistories = '/send-histories';
   static const excludedAccounts = '/excluded-accounts';

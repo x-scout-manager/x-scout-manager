@@ -7,6 +7,9 @@ import '../../features/auth/data/user_repository.dart';
 import '../../features/auth/usecase/load_session.dart';
 import '../../features/auth/usecase/sign_in.dart';
 import '../../features/auth/usecase/sign_out.dart';
+import '../../features/candidates/data/candidate_repository.dart';
+import '../../features/candidates/data/firestore_candidate_repository.dart';
+import '../../features/candidates/usecase/load_candidates.dart';
 import '../../features/exclusions/data/exclusion_repository.dart';
 import '../../features/exclusions/data/firestore_exclusion_repository.dart';
 import '../../features/exclusions/usecase/save_exclusion_keywords.dart';
@@ -27,18 +30,22 @@ class AppDependencies {
     SettingsRepository? settingsRepository,
     ExclusionRepository? exclusionRepository,
     TemplateRepository? templateRepository,
+    CandidateRepository? candidateRepository,
   }) : authRepository = authRepository ?? FirebaseAuthRepository(),
        userRepository = userRepository ?? FirestoreUserRepository(),
        settingsRepository = settingsRepository ?? FirestoreSettingsRepository(),
        exclusionRepository =
            exclusionRepository ?? FirestoreExclusionRepository(),
-       templateRepository = templateRepository ?? FirestoreTemplateRepository();
+       templateRepository = templateRepository ?? FirestoreTemplateRepository(),
+       candidateRepository =
+           candidateRepository ?? FirestoreCandidateRepository();
 
   final AuthRepository authRepository;
   final UserRepository userRepository;
   final SettingsRepository settingsRepository;
   final ExclusionRepository exclusionRepository;
   final TemplateRepository templateRepository;
+  final CandidateRepository candidateRepository;
 
   SignIn get signIn => SignIn(authRepository, userRepository);
 
@@ -60,6 +67,8 @@ class AppDependencies {
   LoadTemplates get loadTemplates => LoadTemplates(templateRepository);
 
   SaveTemplate get saveTemplate => SaveTemplate(templateRepository);
+
+  LoadCandidates get loadCandidates => LoadCandidates(candidateRepository);
 }
 
 class AppProviders extends InheritedWidget {
