@@ -381,7 +381,8 @@ Cloud Functions実行結果の簡易ログ。
 
 ## 12. インデックス方針
 
-初期MVPで想定するインデックスは以下。
+初期MVPで想定する複合インデックスは以下。
+単一フィールドの昇順・降順検索はFirestoreの標準単一フィールドインデックスを利用する。
 
 | コレクション | クエリ | 用途 |
 |---|---|---|
@@ -389,10 +390,8 @@ Cloud Functions実行結果の簡易ログ。
 | candidates | `isExcluded asc, isSent asc, lastFoundAt desc` | 送信対象候補抽出 |
 | candidates | `sourceTags array-contains, lastFoundAt desc` | タグ別確認 |
 | send_histories | `xUserId asc, sentAt desc` | 既送信確認 |
-| send_histories | `sentAt desc` | 送信履歴一覧 |
 | send_queues | `createdBy asc, createdAt desc` | キュー一覧 |
 | send_queues/{queueId}/items | `status asc, order asc` | キュー明細 |
-| excluded_accounts | `username asc` | 除外検索 |
 | conversions | `status asc, createdAt desc` | 成果一覧 |
 | function_logs | `functionName asc, createdAt desc` | 実行ログ確認 |
 

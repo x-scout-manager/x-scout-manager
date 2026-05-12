@@ -61,16 +61,6 @@
       ]
     },
     {
-      "collectionGroup": "send_histories",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "sentAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "send_queues",
       "queryScope": "COLLECTION",
       "fields": [
@@ -94,16 +84,6 @@
         },
         {
           "fieldPath": "order",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "excluded_accounts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "username",
           "order": "ASCENDING"
         }
       ]
