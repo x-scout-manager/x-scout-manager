@@ -5,7 +5,17 @@ class MarkAsManuallySent {
 
   final SendQueueFunctionsRepository _repository;
 
-  Future<void> call(String queueId, String itemId) {
-    return _repository.markAsManuallySent(queueId, itemId);
+  Future<void> call({
+    required String queueId,
+    required String itemId,
+    required String templateId,
+    required String messageBody,
+  }) {
+    return _repository.markAsManuallySent(
+      queueId: queueId,
+      itemId: itemId,
+      templateId: templateId,
+      messageBody: messageBody,
+    );
   }
 }

@@ -19,7 +19,12 @@ import '../../features/settings/usecase/load_scout_settings.dart';
 import '../../features/settings/usecase/save_scout_settings.dart';
 import '../../features/settings/usecase/save_tags.dart';
 import '../../features/send_queue/data/send_queue_functions_repository.dart';
+import '../../features/send_queue/data/firestore_send_queue_repository.dart';
+import '../../features/send_queue/data/send_queue_repository.dart';
 import '../../features/send_queue/usecase/create_send_queue.dart';
+import '../../features/send_queue/usecase/load_send_queue.dart';
+import '../../features/send_queue/usecase/load_send_queue_items.dart';
+import '../../features/send_queue/usecase/mark_as_manually_sent.dart';
 import '../../features/templates/data/firestore_template_repository.dart';
 import '../../features/templates/data/template_repository.dart';
 import '../../features/templates/usecase/load_templates.dart';
@@ -33,6 +38,7 @@ class AppDependencies {
     ExclusionRepository? exclusionRepository,
     TemplateRepository? templateRepository,
     CandidateRepository? candidateRepository,
+    SendQueueRepository? sendQueueRepository,
     SendQueueFunctionsRepository? sendQueueFunctionsRepository,
   }) : authRepository = authRepository ?? FirebaseAuthRepository(),
        userRepository = userRepository ?? FirestoreUserRepository(),
@@ -42,6 +48,8 @@ class AppDependencies {
        templateRepository = templateRepository ?? FirestoreTemplateRepository(),
        candidateRepository =
            candidateRepository ?? FirestoreCandidateRepository(),
+       sendQueueRepository =
+           sendQueueRepository ?? FirestoreSendQueueRepository(),
        sendQueueFunctionsRepository =
            sendQueueFunctionsRepository ??
            FirebaseSendQueueFunctionsRepository();
@@ -52,6 +60,7 @@ class AppDependencies {
   final ExclusionRepository exclusionRepository;
   final TemplateRepository templateRepository;
   final CandidateRepository candidateRepository;
+  final SendQueueRepository sendQueueRepository;
   final SendQueueFunctionsRepository sendQueueFunctionsRepository;
 
   SignIn get signIn => SignIn(authRepository, userRepository);
@@ -79,6 +88,14 @@ class AppDependencies {
 
   CreateSendQueue get createSendQueue =>
       CreateSendQueue(sendQueueFunctionsRepository);
+
+  LoadSendQueue get loadSendQueue => LoadSendQueue(sendQueueRepository);
+
+  LoadSendQueueItems get loadSendQueueItems =>
+      LoadSendQueueItems(sendQueueRepository);
+
+  MarkAsManuallySent get markAsManuallySent =>
+      MarkAsManuallySent(sendQueueFunctionsRepository);
 }
 
 class AppProviders extends InheritedWidget {

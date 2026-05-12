@@ -6,7 +6,12 @@ import '../../../core/errors/functions_error_mapper.dart';
 abstract interface class SendQueueFunctionsRepository {
   Future<String> createSendQueue(List<String> candidateIds);
   Future<void> sendDirectMessage(String queueId, String itemId);
-  Future<void> markAsManuallySent(String queueId, String itemId);
+  Future<void> markAsManuallySent({
+    required String queueId,
+    required String itemId,
+    required String templateId,
+    required String messageBody,
+  });
 }
 
 class FirebaseSendQueueFunctionsRepository
@@ -37,7 +42,24 @@ class FirebaseSendQueueFunctionsRepository
   }
 
   @override
-  Future<void> markAsManuallySent(String queueId, String itemId) async {}
+  Future<void> markAsManuallySent({
+    required String queueId,
+    required String itemId,
+    required String templateId,
+    required String messageBody,
+  }) async {
+    try {
+      final callable = _functions.httpsCallable('markAsManuallySent');
+      await callable.call<Map<String, dynamic>>({
+        'queueId': queueId,
+        'itemId': itemId,
+        'templateId': templateId,
+        'messageBody': messageBody,
+      });
+    } catch (error) {
+      throw FunctionsErrorMapper.map(error);
+    }
+  }
 
   @override
   Future<void> sendDirectMessage(String queueId, String itemId) async {}
