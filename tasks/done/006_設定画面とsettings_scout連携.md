@@ -2,7 +2,7 @@
 
 ## 現状の動作
 
-タグ設定、除外キーワード設定、システム設定は静的表示のみ。
+タグ設定、除外キーワード設定、システム設定は `settings/scout` と連携済み。
 
 ## 期待する動作
 
@@ -36,6 +36,20 @@
 - `settings/scout` に保存できる
 - バリデーションがある
 - `flutter analyze` と `flutter test` が通る
+
+## 実施済み
+
+- [x] `FirestoreSettingsRepository` で `settings/scout` の監視・保存を実装
+- [x] `FirestoreExclusionRepository` で `settings/scout.exclusionKeywords` の監視・保存を実装
+- [x] `ScoutSettings` のFirestore変換、初期値、`copyWith` を実装
+- [x] タグ設定画面でタグ追加・削除・保存を実装
+- [x] 除外キーワード設定画面でキーワード追加・削除・保存を実装
+- [x] システム設定画面で基本設定の編集・保存を実装
+- [x] 空タグ・重複タグ・空キーワード・重複キーワードを防止
+- [x] `flutter analyze` 成功
+- [x] `flutter test` 成功
+- [x] `flutter build web` 成功
+- [x] Firebase Hosting deploy成功
 
 ## レビュー指摘
 

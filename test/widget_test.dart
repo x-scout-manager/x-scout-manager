@@ -5,6 +5,12 @@ import 'package:x_scout_manager/core/auth/role.dart';
 import 'package:x_scout_manager/features/auth/data/auth_repository.dart';
 import 'package:x_scout_manager/features/auth/data/user_repository.dart';
 import 'package:x_scout_manager/features/auth/model/app_user.dart';
+import 'package:x_scout_manager/features/exclusions/data/exclusion_repository.dart';
+import 'package:x_scout_manager/features/exclusions/model/excluded_account.dart';
+import 'package:x_scout_manager/features/exclusions/model/exclusion_keyword.dart';
+import 'package:x_scout_manager/features/settings/data/settings_repository.dart';
+import 'package:x_scout_manager/features/settings/model/scout_settings.dart';
+import 'package:x_scout_manager/features/settings/model/tag_setting.dart';
 
 void main() {
   testWidgets('shows dashboard as initial page', (tester) async {
@@ -13,6 +19,8 @@ void main() {
         dependencies: AppDependencies(
           authRepository: _FakeAuthRepository(),
           userRepository: _FakeUserRepository(),
+          settingsRepository: _FakeSettingsRepository(),
+          exclusionRepository: _FakeExclusionRepository(),
         ),
       ),
     );
@@ -46,4 +54,32 @@ class _FakeUserRepository implements UserRepository {
   Future<AppUser?> findByUid(String uid) async {
     return AppUser(uid: uid, role: Role.admin, isActive: true);
   }
+}
+
+class _FakeSettingsRepository implements SettingsRepository {
+  @override
+  Stream<ScoutSettings?> watchScoutSettings() {
+    return Stream.value(ScoutSettings.defaults);
+  }
+
+  @override
+  Future<void> saveScoutSettings(ScoutSettings settings) async {}
+
+  @override
+  Future<void> saveTags(List<TagSetting> tags) async {}
+}
+
+class _FakeExclusionRepository implements ExclusionRepository {
+  @override
+  Stream<List<ExcludedAccount>> watchExcludedAccounts() {
+    return Stream.value(const []);
+  }
+
+  @override
+  Stream<List<ExclusionKeyword>> watchKeywords() {
+    return Stream.value(const []);
+  }
+
+  @override
+  Future<void> saveKeywords(List<ExclusionKeyword> keywords) async {}
 }
