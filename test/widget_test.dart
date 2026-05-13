@@ -147,6 +147,11 @@ class _FakeSendQueueRepository implements SendQueueRepository {
   }
 
   @override
+  Stream<List<SendQueue>> watchQueues() {
+    return Stream.value(const []);
+  }
+
+  @override
   Stream<SendQueue?> watchQueue(String queueId) {
     return Stream.value(null);
   }

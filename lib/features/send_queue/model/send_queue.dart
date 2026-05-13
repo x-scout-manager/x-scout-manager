@@ -1,3 +1,5 @@
+import '../../../core/serialization/timestamps.dart';
+
 class SendQueue {
   const SendQueue({
     required this.queueId,
@@ -8,6 +10,9 @@ class SendQueue {
     required this.skippedCount,
     required this.failedCount,
     this.name,
+    this.createdAt,
+    this.updatedAt,
+    this.createdBy,
   });
 
   final String queueId;
@@ -18,6 +23,20 @@ class SendQueue {
   final int completedCount;
   final int skippedCount;
   final int failedCount;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final String? createdBy;
+
+  bool get isActive => status == 'active';
+
+  String get statusLabel {
+    return switch (status) {
+      'active' => '進行中',
+      'completed' => '完了',
+      'canceled' => 'キャンセル',
+      _ => status,
+    };
+  }
 
   factory SendQueue.fromJson(String queueId, Map<String, dynamic> json) {
     return SendQueue(
@@ -39,6 +58,11 @@ class SendQueue {
       failedCount: json['failedCount'] is num
           ? (json['failedCount'] as num).toInt()
           : 0,
+      createdAt: TimestampConverter.fromNullable(json['createdAt']),
+      updatedAt: TimestampConverter.fromNullable(json['updatedAt']),
+      createdBy: json['createdBy'] is String
+          ? json['createdBy'] as String
+          : null,
     );
   }
 }

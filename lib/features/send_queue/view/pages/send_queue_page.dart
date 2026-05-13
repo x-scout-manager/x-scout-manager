@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../app/di/providers.dart';
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/ui/widgets/app_scaffold.dart';
+import '../../model/send_queue.dart';
 import '../../model/send_queue_item.dart';
+import '../../vm/send_queue_list_vm.dart';
 import '../../vm/send_queue_vm.dart';
 import '../widgets/message_preview.dart';
 import '../widgets/queue_progress.dart';
@@ -18,10 +21,126 @@ class SendQueuePage extends StatelessWidget {
       title: '送信キュー',
       body: queueId is String && queueId.isNotEmpty
           ? _SendQueueBody(queueId: queueId)
-          : const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('候補一覧から送信キューを作成してください。'),
-            ),
+          : const _SendQueueListBody(),
+    );
+  }
+}
+
+class _SendQueueListBody extends StatefulWidget {
+  const _SendQueueListBody();
+
+  @override
+  State<_SendQueueListBody> createState() => _SendQueueListBodyState();
+}
+
+class _SendQueueListBodyState extends State<_SendQueueListBody> {
+  late final SendQueueListVm _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    final dependencies = AppProviders.read(context);
+    _vm = SendQueueListVm(dependencies.loadSendQueues);
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _vm,
+      builder: (context, _) {
+        final state = _vm.state;
+        if (state.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state.errorMessage != null) {
+          return Center(child: Text(state.errorMessage!));
+        }
+        if (state.queues.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('送信キューはまだありません。候補一覧から作成してください。'),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(24),
+          itemCount: state.queues.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            return _SendQueueCard(queue: state.queues[index]);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _SendQueueCard extends StatelessWidget {
+  const _SendQueueCard({required this.queue});
+
+  final SendQueue queue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(queue.name ?? '送信キュー'),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _StatusChip(label: queue.statusLabel, isActive: queue.isActive),
+              Text('送信済み ${queue.completedCount}/${queue.totalCount}'),
+              Text('スキップ ${queue.skippedCount}'),
+              Text('失敗 ${queue.failedCount}'),
+              Text('作成 ${_formatDateTime(queue.createdAt)}'),
+            ],
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(
+          context,
+        ).pushReplacementNamed(RoutePaths.sendQueue, arguments: queue.queueId),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label, required this.isActive});
+
+  final String label;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isActive
+            ? colorScheme.primaryContainer
+            : colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSecondaryContainer,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -231,4 +350,15 @@ class _QueueItemSelector extends StatelessWidget {
       onChanged: onChanged,
     );
   }
+}
+
+String _formatDateTime(DateTime? value) {
+  if (value == null) {
+    return '-';
+  }
+
+  String twoDigits(int number) => number.toString().padLeft(2, '0');
+  final local = value.toLocal();
+  return '${local.year}/${twoDigits(local.month)}/${twoDigits(local.day)} '
+      '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
 }

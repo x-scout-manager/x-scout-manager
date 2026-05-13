@@ -27,6 +27,7 @@ import '../../features/send_queue/data/send_queue_repository.dart';
 import '../../features/send_queue/usecase/create_send_queue.dart';
 import '../../features/send_queue/usecase/load_send_queue.dart';
 import '../../features/send_queue/usecase/load_send_queue_items.dart';
+import '../../features/send_queue/usecase/load_send_queues.dart';
 import '../../features/send_queue/usecase/mark_as_manually_sent.dart';
 import '../../features/templates/data/firestore_template_repository.dart';
 import '../../features/templates/data/template_repository.dart';
@@ -100,6 +101,8 @@ class AppDependencies {
       CreateSendQueue(sendQueueFunctionsRepository);
 
   LoadSendQueue get loadSendQueue => LoadSendQueue(sendQueueRepository);
+
+  LoadSendQueues get loadSendQueues => LoadSendQueues(sendQueueRepository);
 
   LoadSendQueueItems get loadSendQueueItems =>
       LoadSendQueueItems(sendQueueRepository);

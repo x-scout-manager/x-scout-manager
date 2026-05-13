@@ -24,6 +24,17 @@ class FirestoreSendQueueRepository implements SendQueueRepository {
   }
 
   @override
+  Stream<List<SendQueue>> watchQueues() {
+    return _collection.orderBy('createdAt', descending: true).snapshots().map((
+      snapshot,
+    ) {
+      return snapshot.docs
+          .map((doc) => SendQueue.fromJson(doc.id, doc.data()))
+          .toList();
+    });
+  }
+
+  @override
   Stream<SendQueue?> watchQueue(String queueId) {
     return _collection.doc(queueId).snapshots().map((snapshot) {
       final data = snapshot.data();
