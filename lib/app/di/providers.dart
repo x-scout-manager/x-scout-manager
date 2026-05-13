@@ -13,6 +13,9 @@ import '../../features/candidates/usecase/load_candidates.dart';
 import '../../features/exclusions/data/exclusion_repository.dart';
 import '../../features/exclusions/data/firestore_exclusion_repository.dart';
 import '../../features/exclusions/usecase/save_exclusion_keywords.dart';
+import '../../features/histories/data/firestore_send_history_repository.dart';
+import '../../features/histories/data/send_history_repository.dart';
+import '../../features/histories/usecase/load_send_histories.dart';
 import '../../features/settings/data/firestore_settings_repository.dart';
 import '../../features/settings/data/settings_repository.dart';
 import '../../features/settings/usecase/load_scout_settings.dart';
@@ -38,6 +41,7 @@ class AppDependencies {
     ExclusionRepository? exclusionRepository,
     TemplateRepository? templateRepository,
     CandidateRepository? candidateRepository,
+    SendHistoryRepository? sendHistoryRepository,
     SendQueueRepository? sendQueueRepository,
     SendQueueFunctionsRepository? sendQueueFunctionsRepository,
   }) : authRepository = authRepository ?? FirebaseAuthRepository(),
@@ -48,6 +52,8 @@ class AppDependencies {
        templateRepository = templateRepository ?? FirestoreTemplateRepository(),
        candidateRepository =
            candidateRepository ?? FirestoreCandidateRepository(),
+       sendHistoryRepository =
+           sendHistoryRepository ?? FirestoreSendHistoryRepository(),
        sendQueueRepository =
            sendQueueRepository ?? FirestoreSendQueueRepository(),
        sendQueueFunctionsRepository =
@@ -60,6 +66,7 @@ class AppDependencies {
   final ExclusionRepository exclusionRepository;
   final TemplateRepository templateRepository;
   final CandidateRepository candidateRepository;
+  final SendHistoryRepository sendHistoryRepository;
   final SendQueueRepository sendQueueRepository;
   final SendQueueFunctionsRepository sendQueueFunctionsRepository;
 
@@ -85,6 +92,9 @@ class AppDependencies {
   SaveTemplate get saveTemplate => SaveTemplate(templateRepository);
 
   LoadCandidates get loadCandidates => LoadCandidates(candidateRepository);
+
+  LoadSendHistories get loadSendHistories =>
+      LoadSendHistories(sendHistoryRepository);
 
   CreateSendQueue get createSendQueue =>
       CreateSendQueue(sendQueueFunctionsRepository);

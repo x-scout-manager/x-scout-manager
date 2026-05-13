@@ -10,6 +10,8 @@ import 'package:x_scout_manager/features/candidates/model/candidate.dart';
 import 'package:x_scout_manager/features/exclusions/data/exclusion_repository.dart';
 import 'package:x_scout_manager/features/exclusions/model/excluded_account.dart';
 import 'package:x_scout_manager/features/exclusions/model/exclusion_keyword.dart';
+import 'package:x_scout_manager/features/histories/data/send_history_repository.dart';
+import 'package:x_scout_manager/features/histories/model/send_history.dart';
 import 'package:x_scout_manager/features/settings/data/settings_repository.dart';
 import 'package:x_scout_manager/features/settings/model/scout_settings.dart';
 import 'package:x_scout_manager/features/settings/model/tag_setting.dart';
@@ -31,6 +33,7 @@ void main() {
           exclusionRepository: _FakeExclusionRepository(),
           templateRepository: _FakeTemplateRepository(),
           candidateRepository: _FakeCandidateRepository(),
+          sendHistoryRepository: _FakeSendHistoryRepository(),
           sendQueueRepository: _FakeSendQueueRepository(),
           sendQueueFunctionsRepository: _FakeSendQueueFunctionsRepository(),
         ),
@@ -150,6 +153,13 @@ class _FakeSendQueueRepository implements SendQueueRepository {
 
   @override
   Stream<List<SendQueueItem>> watchItems(String queueId) {
+    return Stream.value(const []);
+  }
+}
+
+class _FakeSendHistoryRepository implements SendHistoryRepository {
+  @override
+  Stream<List<SendHistory>> watchHistories() {
     return Stream.value(const []);
   }
 }
