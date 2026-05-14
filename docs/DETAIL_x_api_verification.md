@@ -18,11 +18,13 @@ X APIの仕様、プラン、審査、レート制限、アカウント制限に
 
 ### 必要なもの
 
-- Xアカウント
-- X Developer Portalへのアクセス
-- X Developer App
-- OAuth 2.0 Client ID
-- 必要スコープ
+- Xアカウント（作成済み）
+- X Developer Portalへのアクセス（確認済み）
+- X Developer App（`x-scout-manager-dev` 作成済み）
+- OAuth 2.0 Client ID（取得済み）
+- Client Secret（取得済み）
+- Bearer Token（取得済み）
+- 必要スコープ（読み書きおよびダイレクトメッセージを選択済み）
 - Firebase / Cloud Functions検証環境
 
 ### 想定スコープ
@@ -140,6 +142,9 @@ max_results = 10
 
 初期検証はCloud FunctionsまたはローカルNode.jsスクリプトで行う。
 
+2026-05-14時点では、秘密情報を本番環境へ入れる前に `tools/x_api_probe.mjs` によるローカル検証を優先する。
+手順は `docs/X_API検証手順.md` に記録する。
+
 推奨順序:
 
 1. OAuth 2.0 PKCE認可
@@ -168,8 +173,51 @@ MVPへの影響:
 
 ## 9. 未確定事項
 
-- X API利用プラン
-- Developer App作成アカウント
-- DM送信対象のテストアカウント
-- OAuth callback URL
+- 本番運用での検索キーワード、取得件数、実行頻度
 - 本番運用での送信上限
+
+## 10. 2026-05-14 検証結果
+
+### Developer App
+
+- App name: `x-scout-manager-dev`
+- App permission: 読み書きおよびダイレクトメッセージ
+- App type: ウェブアプリ、自動化アプリまたはボット
+- Callback URL:
+  - `https://x-scout-manager-prod.web.app/auth/x/callback`
+  - `http://127.0.0.1:8765/callback`
+
+### 投稿検索
+
+- 初回: `status=402` / `CreditsDepleted`
+- クレジット反映後: `status=200`
+- 別クエリで `data[]` と `includes.users[]` の取得成功
+- 判定: 015 X API候補抽出に利用可能
+
+### OAuth 2.0
+
+- 手動コピー方式ではauthorization codeの30秒期限により失敗しやすい
+- `oauth-local` によるローカルcallback方式でUser Access Token取得成功
+- 判定: OAuth 2.0 User Access Token取得可能
+
+### ユーザー取得
+
+- `node tools/x_api_probe.mjs user XDevelopers`
+- `status=200`
+- `id`, `username`, `name`, `description`, `receives_your_dm`, `public_metrics` の取得成功
+- 判定: 候補者プロフィール取得に利用可能
+
+### DM送信
+
+- 初回: `status=403` / `You do not have permission to DM one or more participants.`
+- 受信側条件調整後: `status=201`
+- `dm_conversation_id` と `dm_event_id` の取得成功
+- 受信側X UIではメッセージリクエストの非表示領域に入ることを確認
+- X公式ヘルプ上、品質フィルターで低品質リクエスト扱いになったDMは通知されず、Requests下部のフィルター内に表示される
+- 判定: 016 API DM送信に進めるが、API受理と実着確認を分けて扱う
+
+### MVP判断
+
+- 候補抽出: API利用可能
+- API DM送信: API上は受理されるが、受信側UIではメッセージリクエスト/非表示に入る可能性がある
+- 手動送信支援: 受信側条件、レート制限、クレジット制約の回避策として継続

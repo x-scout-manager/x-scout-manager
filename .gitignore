@@ -37,6 +37,10 @@ firebase-debug.*.log
 firepit-log.txt
 .firebase/
 .runtimeconfig.json
+.env
+.env.*
+!.env.example
+!.env.*.example
 functions/lib/
 functions/node_modules/
 
