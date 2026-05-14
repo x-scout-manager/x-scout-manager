@@ -29,10 +29,30 @@ type CandidateData = {
   displayName?: string;
   profileText?: string;
   matchedKeywords?: unknown;
+  sourceTags?: unknown;
+  firstFoundAt?: unknown;
   status?: string;
   isSent?: boolean;
   isExcluded?: boolean;
   firstContactedAt?: unknown;
+};
+
+type SendHistoryData = {
+  historyId?: string;
+  candidateId?: string;
+  xUserId?: string;
+  username?: string;
+  displayName?: string;
+  queueId?: string;
+  queueItemId?: string;
+  templateId?: string;
+  templateName?: string;
+  messageBodySnapshot?: string;
+  sendMethod?: string;
+  sentAt?: unknown;
+  sentBy?: string;
+  xDmEventId?: string;
+  createdAt?: unknown;
 };
 
 type SendQueueData = {
@@ -53,6 +73,10 @@ type TemplateData = {
   name?: string;
   body?: string;
   isActive?: boolean;
+};
+
+type ScoutSettingsData = {
+  defaultRewardRate?: unknown;
 };
 
 const db = getFirestore();
@@ -493,6 +517,143 @@ export const restoreCandidate = onCall(async (request) => {
   };
 });
 
+export const calculateReward = onCall(async (request) => {
+  await requireAdmin(request);
+  const data = request.data as {salesAmount?: unknown; rewardRate?: unknown};
+  const salesAmount = positiveNumber(data.salesAmount);
+  const rewardRate = data.rewardRate === undefined || data.rewardRate === null ?
+    await defaultRewardRate() :
+    positiveNumber(data.rewardRate);
+
+  if (salesAmount <= 0 || rewardRate <= 0) {
+    throw new HttpsError(
+      "invalid-argument",
+      "対象売上と報酬率を確認してください。",
+    );
+  }
+
+  return {
+    rewardRate,
+    rewardAmount: calculateRewardAmount(salesAmount, rewardRate),
+  };
+});
+
+export const createConversion = onCall(async (request) => {
+  const admin = await requireAdmin(request);
+  const data = request.data as {
+    sendHistoryId?: unknown;
+    salesAmount?: unknown;
+    rewardRate?: unknown;
+    evidenceNote?: unknown;
+  };
+  const sendHistoryId = stringInput(data.sendHistoryId);
+  const salesAmount = positiveNumber(data.salesAmount);
+  const rewardRate = data.rewardRate === undefined || data.rewardRate === null ?
+    await defaultRewardRate() :
+    positiveNumber(data.rewardRate);
+  const evidenceNote = stringInput(data.evidenceNote);
+
+  if (!sendHistoryId) {
+    throw new HttpsError("invalid-argument", "送信履歴を選択してください。");
+  }
+
+  if (salesAmount <= 0 || rewardRate <= 0) {
+    throw new HttpsError(
+      "invalid-argument",
+      "対象売上と報酬率を確認してください。",
+    );
+  }
+
+  const historySnapshot = await db.doc(`send_histories/${sendHistoryId}`).get();
+  if (!historySnapshot.exists) {
+    throw new HttpsError("not-found", "送信履歴が見つかりません。");
+  }
+
+  const history = historySnapshot.data() as SendHistoryData;
+  const candidateId = stringInput(history.candidateId);
+  if (!candidateId) {
+    throw new HttpsError(
+      "failed-precondition",
+      "送信履歴の候補情報が不足しています。",
+    );
+  }
+
+  const [candidateSnapshot, existingConversionSnapshot] = await Promise.all([
+    db.doc(`candidates/${candidateId}`).get(),
+    db
+      .collection("conversions")
+      .where("sendHistoryId", "==", sendHistoryId)
+      .limit(1)
+      .get(),
+  ]);
+
+  if (!existingConversionSnapshot.empty) {
+    throw new HttpsError(
+      "already-exists",
+      "この送信履歴は既に成果登録済みです。",
+    );
+  }
+
+  const candidate = candidateSnapshot.data() as CandidateData | undefined;
+  const conversionRef = db.collection("conversions").doc();
+  const now = Timestamp.now();
+  const rewardAmount = calculateRewardAmount(salesAmount, rewardRate);
+  const sourceTags = Array.isArray(candidate?.sourceTags) ?
+    candidate.sourceTags.filter((tag): tag is string => {
+      return typeof tag === "string" && tag.trim().length > 0;
+    }) :
+    [];
+
+  await conversionRef.set({
+    conversionId: conversionRef.id,
+    candidateId,
+    xUserId: stringInput(history.xUserId) || stringInput(candidate?.xUserId),
+    username: stringInput(history.username) || stringInput(candidate?.username),
+    displayName: stringInput(history.displayName) ||
+      stringInput(candidate?.displayName),
+    sendHistoryId,
+    sendHistorySnapshot: {
+      historyId: sendHistoryId,
+      queueId: stringInput(history.queueId),
+      queueItemId: stringInput(history.queueItemId),
+      templateId: stringInput(history.templateId),
+      templateName: stringInput(history.templateName),
+      messageBodySnapshot: stringInput(history.messageBodySnapshot),
+      sendMethod: stringInput(history.sendMethod),
+      sentAt: history.sentAt ?? null,
+      sentBy: stringInput(history.sentBy),
+      xDmEventId: stringInput(history.xDmEventId),
+      createdAt: history.createdAt ?? null,
+    },
+    candidateSnapshot: {
+      candidateId,
+      xUserId: stringInput(candidate?.xUserId),
+      username: stringInput(candidate?.username),
+      displayName: stringInput(candidate?.displayName),
+      profileText: stringInput(candidate?.profileText),
+      sourceTags,
+      firstFoundAt: candidate?.firstFoundAt ?? null,
+      firstContactedAt: candidate?.firstContactedAt ?? null,
+    },
+    sourceTags,
+    firstFoundAt: candidate?.firstFoundAt ?? null,
+    firstContactedAt: candidate?.firstContactedAt ?? null,
+    salesAmount,
+    rewardRate,
+    rewardAmount,
+    evidenceNote,
+    status: "draft",
+    createdBy: admin.uid,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return {
+    conversionId: conversionRef.id,
+    rewardAmount,
+  };
+});
+
 function normalizeCandidateIds(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
@@ -513,4 +674,26 @@ function stringInput(value: unknown): string {
 
 function numberValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function positiveNumber(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value.trim());
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function calculateRewardAmount(salesAmount: number, rewardRate: number): number {
+  return Math.round(salesAmount * rewardRate);
+}
+
+async function defaultRewardRate(): Promise<number> {
+  const settingsSnapshot = await db.doc("settings/scout").get();
+  const settings = settingsSnapshot.data() as ScoutSettingsData | undefined;
+  const rate = positiveNumber(settings?.defaultRewardRate);
+  return rate > 0 ? rate : 0.1;
 }

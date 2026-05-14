@@ -5,7 +5,7 @@ class CalculateReward {
 
   final ConversionFunctionsRepository _repository;
 
-  Future<num> call({required num salesAmount, required num rewardRate}) {
+  Future<num> call({required num salesAmount, num? rewardRate}) {
     return _repository.calculateReward(
       salesAmount: salesAmount,
       rewardRate: rewardRate,

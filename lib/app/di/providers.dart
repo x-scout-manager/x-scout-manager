@@ -13,6 +13,12 @@ import '../../features/candidates/data/firestore_candidate_repository.dart';
 import '../../features/candidates/usecase/exclude_candidate.dart';
 import '../../features/candidates/usecase/load_candidates.dart';
 import '../../features/candidates/usecase/restore_candidate.dart';
+import '../../features/conversions/data/conversion_functions_repository.dart';
+import '../../features/conversions/data/conversion_repository.dart';
+import '../../features/conversions/data/firestore_conversion_repository.dart';
+import '../../features/conversions/usecase/calculate_reward.dart';
+import '../../features/conversions/usecase/create_conversion.dart';
+import '../../features/conversions/usecase/load_conversions.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/dashboard/data/firestore_dashboard_repository.dart';
 import '../../features/dashboard/usecase/load_dashboard_summary.dart';
@@ -51,6 +57,8 @@ class AppDependencies {
     TemplateRepository? templateRepository,
     CandidateRepository? candidateRepository,
     CandidateFunctionsRepository? candidateFunctionsRepository,
+    ConversionRepository? conversionRepository,
+    ConversionFunctionsRepository? conversionFunctionsRepository,
     SendHistoryRepository? sendHistoryRepository,
     SendQueueRepository? sendQueueRepository,
     SendQueueFunctionsRepository? sendQueueFunctionsRepository,
@@ -67,6 +75,11 @@ class AppDependencies {
        candidateFunctionsRepository =
            candidateFunctionsRepository ??
            FirebaseCandidateFunctionsRepository(),
+       conversionRepository =
+           conversionRepository ?? FirestoreConversionRepository(),
+       conversionFunctionsRepository =
+           conversionFunctionsRepository ??
+           FirebaseConversionFunctionsRepository(),
        sendHistoryRepository =
            sendHistoryRepository ?? FirestoreSendHistoryRepository(),
        sendQueueRepository =
@@ -83,6 +96,8 @@ class AppDependencies {
   final TemplateRepository templateRepository;
   final CandidateRepository candidateRepository;
   final CandidateFunctionsRepository candidateFunctionsRepository;
+  final ConversionRepository conversionRepository;
+  final ConversionFunctionsRepository conversionFunctionsRepository;
   final SendHistoryRepository sendHistoryRepository;
   final SendQueueRepository sendQueueRepository;
   final SendQueueFunctionsRepository sendQueueFunctionsRepository;
@@ -121,6 +136,14 @@ class AppDependencies {
 
   RestoreCandidate get restoreCandidate =>
       RestoreCandidate(candidateFunctionsRepository);
+
+  LoadConversions get loadConversions => LoadConversions(conversionRepository);
+
+  CreateConversion get createConversion =>
+      CreateConversion(conversionFunctionsRepository);
+
+  CalculateReward get calculateReward =>
+      CalculateReward(conversionFunctionsRepository);
 
   LoadSendHistories get loadSendHistories =>
       LoadSendHistories(sendHistoryRepository);

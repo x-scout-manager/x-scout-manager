@@ -1,12 +1,21 @@
 import '../data/conversion_functions_repository.dart';
-import '../model/conversion.dart';
 
 class CreateConversion {
   const CreateConversion(this._repository);
 
   final ConversionFunctionsRepository _repository;
 
-  Future<void> call(Conversion conversion) {
-    return _repository.createConversion(conversion);
+  Future<String> call({
+    required String sendHistoryId,
+    required num salesAmount,
+    num? rewardRate,
+    String? evidenceNote,
+  }) {
+    return _repository.createConversion(
+      sendHistoryId: sendHistoryId,
+      salesAmount: salesAmount,
+      rewardRate: rewardRate,
+      evidenceNote: evidenceNote,
+    );
   }
 }

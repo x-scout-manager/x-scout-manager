@@ -8,6 +8,9 @@ import 'package:x_scout_manager/features/auth/model/app_user.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_repository.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_functions_repository.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate.dart';
+import 'package:x_scout_manager/features/conversions/data/conversion_functions_repository.dart';
+import 'package:x_scout_manager/features/conversions/data/conversion_repository.dart';
+import 'package:x_scout_manager/features/conversions/model/conversion.dart';
 import 'package:x_scout_manager/features/dashboard/data/dashboard_repository.dart';
 import 'package:x_scout_manager/features/dashboard/model/dashboard_summary.dart';
 import 'package:x_scout_manager/features/exclusions/data/exclusion_repository.dart';
@@ -38,6 +41,8 @@ void main() {
           templateRepository: _FakeTemplateRepository(),
           candidateRepository: _FakeCandidateRepository(),
           candidateFunctionsRepository: _FakeCandidateFunctionsRepository(),
+          conversionRepository: _FakeConversionRepository(),
+          conversionFunctionsRepository: _FakeConversionFunctionsRepository(),
           sendHistoryRepository: _FakeSendHistoryRepository(),
           sendQueueRepository: _FakeSendQueueRepository(),
           sendQueueFunctionsRepository: _FakeSendQueueFunctionsRepository(),
@@ -152,6 +157,34 @@ class _FakeCandidateFunctionsRepository
 
   @override
   Future<void> syncCandidates() async {}
+}
+
+class _FakeConversionRepository implements ConversionRepository {
+  @override
+  Stream<List<Conversion>> watchConversions() {
+    return Stream.value(const []);
+  }
+}
+
+class _FakeConversionFunctionsRepository
+    implements ConversionFunctionsRepository {
+  @override
+  Future<num> calculateReward({
+    required num salesAmount,
+    num? rewardRate,
+  }) async {
+    return (salesAmount * (rewardRate ?? 0.1)).round();
+  }
+
+  @override
+  Future<String> createConversion({
+    required String sendHistoryId,
+    required num salesAmount,
+    num? rewardRate,
+    String? evidenceNote,
+  }) async {
+    return 'conversion-id';
+  }
 }
 
 class _FakeSendQueueFunctionsRepository

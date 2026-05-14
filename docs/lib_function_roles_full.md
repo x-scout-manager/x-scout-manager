@@ -52,6 +52,15 @@
 | `lib/features/dashboard/vm/dashboard_vm.dart` | ダッシュボード集計の読込、ローディング、エラー状態を管理 |
 | `lib/features/dashboard/view/pages/dashboard_page.dart` | ダッシュボード集計UIをVMへ接続する画面 |
 | `lib/features/dashboard/view/widgets/summary_tiles.dart` | ダッシュボードの主要指標タイル表示 |
+| `lib/features/conversions/model/conversion.dart` | 成果証跡の表示用モデルとFirestore変換 |
+| `lib/features/conversions/data/firestore_conversion_repository.dart` | `conversions` を購読して成果一覧へ渡すRepository |
+| `lib/features/conversions/data/conversion_functions_repository.dart` | 成果登録・報酬計算Callable Functionsの呼び出し境界 |
+| `lib/features/conversions/usecase/load_conversions.dart` | 成果一覧を購読するUseCase |
+| `lib/features/conversions/usecase/create_conversion.dart` | 送信履歴起点で成果証跡を作成するUseCase |
+| `lib/features/conversions/usecase/calculate_reward.dart` | 対象売上と報酬率から成果報酬額を計算するUseCase |
+| `lib/features/conversions/vm/conversion_list_vm.dart` | 成果一覧の読込、ローディング、エラー状態を管理 |
+| `lib/features/conversions/vm/conversion_form_vm.dart` | 成果登録フォームの送信履歴選択、売上、報酬率、登録状態を管理 |
+| `lib/features/conversions/view/pages/conversion_list_page.dart` | 成果登録フォームと成果一覧を表示する画面 |
 | `lib/features/candidates/data/candidate_functions_repository.dart` | 候補除外/復元など候補系Callable Functionsの呼び出し境界 |
 | `lib/features/candidates/usecase/exclude_candidate.dart` | 候補を除外リストへ追加するUseCase |
 | `lib/features/candidates/usecase/restore_candidate.dart` | 候補を除外リストから復元するUseCase |
@@ -73,4 +82,4 @@
 | `firestore.indexes.json` | 初期MVPで想定するFirestore複合インデックス |
 | `functions/package.json` | Cloud Functions依存関係とbuild/lint/test scripts |
 | `functions/tsconfig.json` | Cloud Functions TypeScriptコンパイル設定 |
-| `functions/src/index.ts` | Functions entrypoint。認証確認、送信キュー作成、手動送信済み登録、候補除外/復元を定義 |
+| `functions/src/index.ts` | Functions entrypoint。認証確認、送信キュー作成、手動送信済み登録、候補除外/復元、成果登録/報酬計算を定義 |
