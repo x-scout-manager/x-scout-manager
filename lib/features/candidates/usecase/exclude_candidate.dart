@@ -5,7 +5,10 @@ class ExcludeCandidate {
 
   final CandidateFunctionsRepository _repository;
 
-  Future<void> call(String candidateId) {
-    return _repository.excludeCandidate(candidateId);
+  Future<void> call(String candidateId, {String? reason}) {
+    return _repository.excludeCandidate(
+      candidateId: candidateId,
+      reason: reason,
+    );
   }
 }

@@ -46,6 +46,16 @@
 | `lib/features/auth/usecase/load_session.dart` | 現在ログイン中ユーザーのadminセッションを復元する |
 | `lib/features/auth/view/widgets/auth_gate.dart` | 管理画面ルートを未ログイン・非adminから保護する |
 | `lib/features/auth/view/widgets/login_form.dart` | メールアドレス/パスワードログインフォーム |
+| `lib/features/candidates/data/candidate_functions_repository.dart` | 候補除外/復元など候補系Callable Functionsの呼び出し境界 |
+| `lib/features/candidates/usecase/exclude_candidate.dart` | 候補を除外リストへ追加するUseCase |
+| `lib/features/candidates/usecase/restore_candidate.dart` | 候補を除外リストから復元するUseCase |
+| `lib/features/candidates/vm/candidate_detail_vm.dart` | 候補詳細の読込、除外、復元、エラー表示状態を管理 |
+| `lib/features/candidates/view/pages/candidate_detail_page.dart` | 候補詳細表示と除外/復元操作のUI |
+| `lib/features/exclusions/model/excluded_account.dart` | `excluded_accounts` の表示用モデルとFirestore変換 |
+| `lib/features/exclusions/data/firestore_exclusion_repository.dart` | 除外アカウント一覧と除外キーワード設定のFirestore接続 |
+| `lib/features/exclusions/usecase/load_excluded_accounts.dart` | 除外アカウント一覧を購読するUseCase |
+| `lib/features/exclusions/vm/excluded_account_vm.dart` | 除外リストの読込、復元操作、エラー表示状態を管理 |
+| `lib/features/exclusions/view/pages/excluded_account_page.dart` | 除外リスト一覧と除外解除操作のUI |
 
 ## Cloud Functions
 
@@ -57,4 +67,4 @@
 | `firestore.indexes.json` | 初期MVPで想定するFirestore複合インデックス |
 | `functions/package.json` | Cloud Functions依存関係とbuild/lint/test scripts |
 | `functions/tsconfig.json` | Cloud Functions TypeScriptコンパイル設定 |
-| `functions/src/index.ts` | Functions entrypoint。`healthCheck` と `adminHealthCheck` の初期関数を定義 |
+| `functions/src/index.ts` | Functions entrypoint。認証確認、送信キュー作成、手動送信済み登録、候補除外/復元を定義 |

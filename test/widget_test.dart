@@ -6,6 +6,7 @@ import 'package:x_scout_manager/features/auth/data/auth_repository.dart';
 import 'package:x_scout_manager/features/auth/data/user_repository.dart';
 import 'package:x_scout_manager/features/auth/model/app_user.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_repository.dart';
+import 'package:x_scout_manager/features/candidates/data/candidate_functions_repository.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate.dart';
 import 'package:x_scout_manager/features/exclusions/data/exclusion_repository.dart';
 import 'package:x_scout_manager/features/exclusions/model/excluded_account.dart';
@@ -33,6 +34,7 @@ void main() {
           exclusionRepository: _FakeExclusionRepository(),
           templateRepository: _FakeTemplateRepository(),
           candidateRepository: _FakeCandidateRepository(),
+          candidateFunctionsRepository: _FakeCandidateFunctionsRepository(),
           sendHistoryRepository: _FakeSendHistoryRepository(),
           sendQueueRepository: _FakeSendQueueRepository(),
           sendQueueFunctionsRepository: _FakeSendQueueFunctionsRepository(),
@@ -119,6 +121,21 @@ class _FakeCandidateRepository implements CandidateRepository {
   Future<Candidate?> findById(String candidateId) async {
     return null;
   }
+}
+
+class _FakeCandidateFunctionsRepository
+    implements CandidateFunctionsRepository {
+  @override
+  Future<void> excludeCandidate({
+    required String candidateId,
+    String? reason,
+  }) async {}
+
+  @override
+  Future<void> restoreCandidate(String candidateId) async {}
+
+  @override
+  Future<void> syncCandidates() async {}
 }
 
 class _FakeSendQueueFunctionsRepository

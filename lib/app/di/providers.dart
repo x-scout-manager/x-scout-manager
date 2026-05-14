@@ -8,10 +8,14 @@ import '../../features/auth/usecase/load_session.dart';
 import '../../features/auth/usecase/sign_in.dart';
 import '../../features/auth/usecase/sign_out.dart';
 import '../../features/candidates/data/candidate_repository.dart';
+import '../../features/candidates/data/candidate_functions_repository.dart';
 import '../../features/candidates/data/firestore_candidate_repository.dart';
+import '../../features/candidates/usecase/exclude_candidate.dart';
 import '../../features/candidates/usecase/load_candidates.dart';
+import '../../features/candidates/usecase/restore_candidate.dart';
 import '../../features/exclusions/data/exclusion_repository.dart';
 import '../../features/exclusions/data/firestore_exclusion_repository.dart';
+import '../../features/exclusions/usecase/load_excluded_accounts.dart';
 import '../../features/exclusions/usecase/save_exclusion_keywords.dart';
 import '../../features/histories/data/firestore_send_history_repository.dart';
 import '../../features/histories/data/send_history_repository.dart';
@@ -42,6 +46,7 @@ class AppDependencies {
     ExclusionRepository? exclusionRepository,
     TemplateRepository? templateRepository,
     CandidateRepository? candidateRepository,
+    CandidateFunctionsRepository? candidateFunctionsRepository,
     SendHistoryRepository? sendHistoryRepository,
     SendQueueRepository? sendQueueRepository,
     SendQueueFunctionsRepository? sendQueueFunctionsRepository,
@@ -53,6 +58,9 @@ class AppDependencies {
        templateRepository = templateRepository ?? FirestoreTemplateRepository(),
        candidateRepository =
            candidateRepository ?? FirestoreCandidateRepository(),
+       candidateFunctionsRepository =
+           candidateFunctionsRepository ??
+           FirebaseCandidateFunctionsRepository(),
        sendHistoryRepository =
            sendHistoryRepository ?? FirestoreSendHistoryRepository(),
        sendQueueRepository =
@@ -67,6 +75,7 @@ class AppDependencies {
   final ExclusionRepository exclusionRepository;
   final TemplateRepository templateRepository;
   final CandidateRepository candidateRepository;
+  final CandidateFunctionsRepository candidateFunctionsRepository;
   final SendHistoryRepository sendHistoryRepository;
   final SendQueueRepository sendQueueRepository;
   final SendQueueFunctionsRepository sendQueueFunctionsRepository;
@@ -88,11 +97,20 @@ class AppDependencies {
   SaveExclusionKeywords get saveExclusionKeywords =>
       SaveExclusionKeywords(exclusionRepository);
 
+  LoadExcludedAccounts get loadExcludedAccounts =>
+      LoadExcludedAccounts(exclusionRepository);
+
   LoadTemplates get loadTemplates => LoadTemplates(templateRepository);
 
   SaveTemplate get saveTemplate => SaveTemplate(templateRepository);
 
   LoadCandidates get loadCandidates => LoadCandidates(candidateRepository);
+
+  ExcludeCandidate get excludeCandidate =>
+      ExcludeCandidate(candidateFunctionsRepository);
+
+  RestoreCandidate get restoreCandidate =>
+      RestoreCandidate(candidateFunctionsRepository);
 
   LoadSendHistories get loadSendHistories =>
       LoadSendHistories(sendHistoryRepository);

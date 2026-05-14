@@ -23,7 +23,12 @@ class CandidateDetailPage extends StatelessWidget {
     return AppScaffold(
       title: '候補詳細',
       body: _CandidateDetailBody(
-        vm: CandidateDetailVm(dependencies.candidateRepository, candidateId),
+        vm: CandidateDetailVm(
+          dependencies.candidateRepository,
+          dependencies.excludeCandidate,
+          dependencies.restoreCandidate,
+          candidateId,
+        ),
       ),
     );
   }
@@ -61,16 +66,35 @@ class _CandidateDetailBodyState extends State<_CandidateDetailBody> {
         if (candidate == null) {
           return const Center(child: Text('候補が見つかりません。'));
         }
-        return _CandidateDetail(candidate: candidate);
+        return _CandidateDetail(
+          candidate: candidate,
+          isSaving: state.isSaving,
+          errorMessage: state.errorMessage,
+          noticeMessage: state.noticeMessage,
+          onExclude: widget.vm.exclude,
+          onRestore: widget.vm.restore,
+        );
       },
     );
   }
 }
 
 class _CandidateDetail extends StatelessWidget {
-  const _CandidateDetail({required this.candidate});
+  const _CandidateDetail({
+    required this.candidate,
+    required this.isSaving,
+    required this.onExclude,
+    required this.onRestore,
+    this.errorMessage,
+    this.noticeMessage,
+  });
 
   final Candidate candidate;
+  final bool isSaving;
+  final String? errorMessage;
+  final String? noticeMessage;
+  final Future<void> Function({String? reason}) onExclude;
+  final Future<void> Function() onRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +113,44 @@ class _CandidateDetail extends StatelessWidget {
             Text('@${candidate.username}'),
             const SizedBox(height: 16),
             CandidateStatusBadge(status: candidate.status),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                if (candidate.isExcluded)
+                  OutlinedButton.icon(
+                    onPressed: isSaving ? null : onRestore,
+                    icon: const Icon(Icons.undo),
+                    label: Text(isSaving ? '復帰中' : '除外解除'),
+                  )
+                else
+                  FilledButton.tonalIcon(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            final reason = await _showExcludeDialog(context);
+                            if (reason == null) {
+                              return;
+                            }
+                            await onExclude(reason: reason);
+                          },
+                    icon: const Icon(Icons.block),
+                    label: Text(isSaving ? '除外中' : '除外にする'),
+                  ),
+              ],
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                errorMessage!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
+            if (noticeMessage != null) ...[
+              const SizedBox(height: 16),
+              Text(noticeMessage!),
+            ],
             const SizedBox(height: 24),
             _DetailRow(label: '候補ID', value: candidate.candidateId),
             _DetailRow(label: 'XユーザーID', value: candidate.xUserId),
@@ -114,6 +176,34 @@ class _CandidateDetail extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<String?> _showExcludeDialog(BuildContext context) {
+  final controller = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('除外にする'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: '理由', hintText: '任意'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('除外'),
+          ),
+        ],
+      );
+    },
+  ).whenComplete(controller.dispose);
 }
 
 class _DetailRow extends StatelessWidget {

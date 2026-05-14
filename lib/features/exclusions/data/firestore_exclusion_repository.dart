@@ -23,16 +23,24 @@ class FirestoreExclusionRepository implements ExclusionRepository {
     return _firestore.collection('excluded_accounts').snapshots().map((
       snapshot,
     ) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return ExcludedAccount(
-          xUserId: doc.id,
-          username: data['username'] is String
-              ? data['username'] as String
-              : '',
-          reason: data['reason'] is String ? data['reason'] as String : '',
-        );
-      }).toList();
+      final accounts = snapshot.docs
+          .map((doc) => ExcludedAccount.fromJson(doc.id, doc.data()))
+          .toList();
+      accounts.sort((a, b) {
+        final aTime = a.updatedAt ?? a.createdAt;
+        final bTime = b.updatedAt ?? b.createdAt;
+        if (aTime == null && bTime == null) {
+          return a.xUserId.compareTo(b.xUserId);
+        }
+        if (aTime == null) {
+          return 1;
+        }
+        if (bTime == null) {
+          return -1;
+        }
+        return bTime.compareTo(aTime);
+      });
+      return accounts;
     });
   }
 
