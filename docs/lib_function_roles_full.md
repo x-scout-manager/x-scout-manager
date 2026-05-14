@@ -46,6 +46,12 @@
 | `lib/features/auth/usecase/load_session.dart` | 現在ログイン中ユーザーのadminセッションを復元する |
 | `lib/features/auth/view/widgets/auth_gate.dart` | 管理画面ルートを未ログイン・非adminから保護する |
 | `lib/features/auth/view/widgets/login_form.dart` | メールアドレス/パスワードログインフォーム |
+| `lib/features/dashboard/model/dashboard_summary.dart` | ダッシュボードに表示する主要件数のモデル |
+| `lib/features/dashboard/data/firestore_dashboard_repository.dart` | Firestore `count()` 集計クエリで候補、送信履歴、除外、送信キュー件数を取得 |
+| `lib/features/dashboard/usecase/load_dashboard_summary.dart` | ダッシュボード集計を読み込むUseCase |
+| `lib/features/dashboard/vm/dashboard_vm.dart` | ダッシュボード集計の読込、ローディング、エラー状態を管理 |
+| `lib/features/dashboard/view/pages/dashboard_page.dart` | ダッシュボード集計UIをVMへ接続する画面 |
+| `lib/features/dashboard/view/widgets/summary_tiles.dart` | ダッシュボードの主要指標タイル表示 |
 | `lib/features/candidates/data/candidate_functions_repository.dart` | 候補除外/復元など候補系Callable Functionsの呼び出し境界 |
 | `lib/features/candidates/usecase/exclude_candidate.dart` | 候補を除外リストへ追加するUseCase |
 | `lib/features/candidates/usecase/restore_candidate.dart` | 候補を除外リストから復元するUseCase |

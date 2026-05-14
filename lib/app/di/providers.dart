@@ -13,6 +13,9 @@ import '../../features/candidates/data/firestore_candidate_repository.dart';
 import '../../features/candidates/usecase/exclude_candidate.dart';
 import '../../features/candidates/usecase/load_candidates.dart';
 import '../../features/candidates/usecase/restore_candidate.dart';
+import '../../features/dashboard/data/dashboard_repository.dart';
+import '../../features/dashboard/data/firestore_dashboard_repository.dart';
+import '../../features/dashboard/usecase/load_dashboard_summary.dart';
 import '../../features/exclusions/data/exclusion_repository.dart';
 import '../../features/exclusions/data/firestore_exclusion_repository.dart';
 import '../../features/exclusions/usecase/load_excluded_accounts.dart';
@@ -43,6 +46,7 @@ class AppDependencies {
     AuthRepository? authRepository,
     UserRepository? userRepository,
     SettingsRepository? settingsRepository,
+    DashboardRepository? dashboardRepository,
     ExclusionRepository? exclusionRepository,
     TemplateRepository? templateRepository,
     CandidateRepository? candidateRepository,
@@ -53,6 +57,8 @@ class AppDependencies {
   }) : authRepository = authRepository ?? FirebaseAuthRepository(),
        userRepository = userRepository ?? FirestoreUserRepository(),
        settingsRepository = settingsRepository ?? FirestoreSettingsRepository(),
+       dashboardRepository =
+           dashboardRepository ?? FirestoreDashboardRepository(),
        exclusionRepository =
            exclusionRepository ?? FirestoreExclusionRepository(),
        templateRepository = templateRepository ?? FirestoreTemplateRepository(),
@@ -72,6 +78,7 @@ class AppDependencies {
   final AuthRepository authRepository;
   final UserRepository userRepository;
   final SettingsRepository settingsRepository;
+  final DashboardRepository dashboardRepository;
   final ExclusionRepository exclusionRepository;
   final TemplateRepository templateRepository;
   final CandidateRepository candidateRepository;
@@ -85,6 +92,9 @@ class AppDependencies {
   LoadSession get loadSession => LoadSession(authRepository, userRepository);
 
   SignOut get signOut => SignOut(authRepository);
+
+  LoadDashboardSummary get loadDashboardSummary =>
+      LoadDashboardSummary(dashboardRepository);
 
   LoadScoutSettings get loadScoutSettings =>
       LoadScoutSettings(settingsRepository);

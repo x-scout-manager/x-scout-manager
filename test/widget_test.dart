@@ -8,6 +8,8 @@ import 'package:x_scout_manager/features/auth/model/app_user.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_repository.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_functions_repository.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate.dart';
+import 'package:x_scout_manager/features/dashboard/data/dashboard_repository.dart';
+import 'package:x_scout_manager/features/dashboard/model/dashboard_summary.dart';
 import 'package:x_scout_manager/features/exclusions/data/exclusion_repository.dart';
 import 'package:x_scout_manager/features/exclusions/model/excluded_account.dart';
 import 'package:x_scout_manager/features/exclusions/model/exclusion_keyword.dart';
@@ -31,6 +33,7 @@ void main() {
           authRepository: _FakeAuthRepository(),
           userRepository: _FakeUserRepository(),
           settingsRepository: _FakeSettingsRepository(),
+          dashboardRepository: _FakeDashboardRepository(),
           exclusionRepository: _FakeExclusionRepository(),
           templateRepository: _FakeTemplateRepository(),
           candidateRepository: _FakeCandidateRepository(),
@@ -41,7 +44,7 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('ダッシュボード'), findsOneWidget);
     expect(find.text('候補'), findsOneWidget);
@@ -84,6 +87,19 @@ class _FakeSettingsRepository implements SettingsRepository {
 
   @override
   Future<void> saveTags(List<TagSetting> tags) async {}
+}
+
+class _FakeDashboardRepository implements DashboardRepository {
+  @override
+  Future<DashboardSummary> loadSummary() async {
+    return const DashboardSummary(
+      candidateCount: 0,
+      sentCount: 0,
+      excludedCount: 0,
+      unsentCandidateCount: 0,
+      activeQueueCount: 0,
+    );
+  }
 }
 
 class _FakeExclusionRepository implements ExclusionRepository {

@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../../model/dashboard_summary.dart';
+
 class SummaryTiles extends StatelessWidget {
-  const SummaryTiles({super.key});
+  const SummaryTiles({required this.summary, super.key});
+
+  final DashboardSummary summary;
 
   @override
   Widget build(BuildContext context) {
-    return const Wrap(
+    return Wrap(
       spacing: 16,
       runSpacing: 16,
       children: [
-        _SummaryTile(label: '候補', value: '0'),
-        _SummaryTile(label: '送信済み', value: '0'),
-        _SummaryTile(label: '除外', value: '0'),
+        _SummaryTile(label: '候補', value: summary.candidateCount.toString()),
+        _SummaryTile(
+          label: '未送信候補',
+          value: summary.unsentCandidateCount.toString(),
+        ),
+        _SummaryTile(label: '送信済み', value: summary.sentCount.toString()),
+        _SummaryTile(label: '除外', value: summary.excludedCount.toString()),
+        _SummaryTile(
+          label: '進行中キュー',
+          value: summary.activeQueueCount.toString(),
+        ),
       ],
     );
   }
