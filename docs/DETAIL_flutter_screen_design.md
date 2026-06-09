@@ -55,7 +55,7 @@ Cloud Functionsのエラーコードをユーザー向け文言に変換して�
 | `/send-histories` | SendHistoryPage | histories |
 | `/excluded-accounts` | ExcludedAccountPage | exclusions |
 | `/templates` | TemplateListPage | templates |
-| `/conversions` | ConversionListPage | conversions |
+| `/conversions` | ConversionListPage | conversions。初期運用ではメイン導線から非表示 |
 | `/settings/tags` | TagSettingPage | settings |
 | `/settings/exclusions` | ExclusionKeywordSettingPage | exclusions |
 | `/settings` | SystemSettingPage | settings |
@@ -191,13 +191,29 @@ errorMessage
 
 | 操作 | 処理 |
 |---|---|
+| タグ検索モード変更 | `settings/scout.tagSearchMode` を保存 |
 | 候補抽出 | `syncCandidates` 呼び出し |
+| 抽出解除 | `revertCandidateSyncRun` 呼び出し |
 | チェック | 送信対象選択 |
 | 送信キューに追加 | `createSendQueue` 呼び出し |
 | 詳細 | 候補詳細へ遷移 |
 | 除外 | `excludeCandidate` 呼び出し |
 
 ### フィルタ
+
+### 最近の候補抽出
+
+候補一覧画面に直近の `candidate_sync_runs` を表示する。
+
+| 項目 | 内容 |
+|---|---|
+| 実行日時 | createdAt |
+| 条件 | tagSearchMode / tags |
+| 件数 | created / updated / excluded |
+| 状態 | running / completed / reverted / failed |
+| 解除 | completedのrunのみ実行可能 |
+
+解除時は確認ダイアログを表示し、送信履歴・送信キュー・後続抽出で保護された候補はスキップされることを明示する。
 
 初期MVPでは以下のみ。
 
@@ -254,7 +270,7 @@ errorMessage
 
 ### 重要
 
-初期MVPでは手動送信支援を必須とし、API送信はX API検証後に有効化する。
+API送信を基本導線とし、手動送信支援はAPI失敗時や運用停止時のフォールバックとして残す。
 
 ## 12. 送信履歴画面
 
@@ -292,7 +308,10 @@ errorMessage
 | 除外解除 | `restoreCandidate` |
 | 候補詳細 | 候補詳細へ遷移 |
 
-## 14. 成果報告管理画面
+## 14. 成約記録画面
+
+初期運用ではメインナビゲーションから非表示にする。
+成果報酬計算はクライアント側で別途行うため、本画面は必要になった場合に成約記録/成果メモとして再設計する。
 
 ### 表示項目
 
@@ -300,8 +319,6 @@ errorMessage
 - Xユーザー名
 - 送信履歴
 - 対象売上
-- 成果報酬率
-- 成果報酬額
 - ステータス
 - 登録日時
 
@@ -309,17 +326,18 @@ errorMessage
 
 | 操作 | 処理 |
 |---|---|
-| 成果登録 | `createConversion` |
-| 報酬額計算 | `calculateReward` |
+| 成約記録登録 | `createConversion` |
 | ステータス更新 | MVPでは任意。初期は登録のみでも可 |
+
+成果報酬率・成果報酬額は本システムでは入力/表示しない。
+算定はクライアント側で別途行う。
 
 ## 15. システム設定画面
 
 ### 表示項目
 
-- API DM送信有効/無効
-- 手動送信有効/無効
-- 標準成果報酬率
+- API送信を有効にする
+- 手動送信フォールバックを有効にする
 - 検索取得件数
 - 最大ページ数
 
@@ -340,7 +358,7 @@ errorMessage
 9. 送信キュー
 10. 送信履歴
 11. 除外リスト
-12. 成果報告管理
+12. 成約記録（初期運用ではメイン導線から非表示）
 
 ## 17. 未確定事項
 

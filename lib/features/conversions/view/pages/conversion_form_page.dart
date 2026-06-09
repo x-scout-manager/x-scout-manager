@@ -8,8 +8,8 @@ class ConversionFormPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AppScaffold(
-      title: '成果登録',
-      body: Center(child: Text('成果登録')),
+      title: '成約記録を登録',
+      body: Center(child: Text('成約記録を登録')),
     );
   }
 }

@@ -78,12 +78,6 @@ class _AppNavigationDrawer extends StatelessWidget {
               route: RoutePaths.templates,
               currentRoute: currentRoute,
             ),
-            _NavigationItem(
-              label: '成果証跡',
-              icon: Icons.verified_outlined,
-              route: RoutePaths.conversions,
-              currentRoute: currentRoute,
-            ),
             const Divider(),
             _NavigationItem(
               label: 'タグ設定',

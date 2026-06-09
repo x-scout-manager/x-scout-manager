@@ -75,7 +75,7 @@ DM送信については、自動一括送信ではなく、候補者をチェッ
 | 8 | 送信履歴画面 | /send-histories | DM送信履歴を表示する |
 | 9 | 除外リスト画面 | /excluded-accounts | 除外対象アカウントを表示する |
 | 10 | テンプレート画面 | /templates | DMテンプレートを管理する |
-| 11 | 成果報告管理画面 | /conversions | 成果対象者、売上、成果報酬を管理する |
+| 11 | 成果記録画面 | /conversions | 初期運用では非表示。必要時に成約記録/成果メモとして再設計する |
 | 12 | システム設定画面 | /settings | 基本設定を管理する |
 
 ---
@@ -281,12 +281,12 @@ send_histories/{historyId}
 | 関数名 | 種別 | 概要 |
 |---|---|---|
 | syncCandidates | callable | 指定タグをもとにX APIから候補を抽出する |
+| revertCandidateSyncRun | callable | 抽出run単位で候補抽出を解除する |
 | createSendQueue | callable | チェック選択された候補から送信キューを作成する |
 | sendDirectMessage | callable | 候補者1名にDMを送信する |
 | markAsManuallySent | callable | 手動送信済みとして履歴を保存する |
 | excludeCandidate | callable | 候補を除外する |
 | restoreCandidate | callable | 除外候補を候補に戻す |
-| calculateReward | callable | 成果報酬額を計算する |
 | createConversion | callable | 成果情報を登録する |
 
 ---
@@ -302,8 +302,8 @@ send_histories/{historyId}
 1. 認証ユーザーを確認する
 2. 管理者権限を確認する
 3. settings/scoutを取得する
-4. 対象タグを決定する
-5. X APIで投稿検索を実行する
+4. 対象タグとタグ検索条件を決定する
+5. タグごと検索、OR検索、AND検索のいずれかでX API投稿検索を実行する
 6. 投稿主ユーザー情報を取得する
 7. 既存candidateを確認する
 8. send_historiesを確認し既送信を判定する
@@ -311,6 +311,9 @@ send_histories/{historyId}
 10. プロフィール文に除外キーワードが含まれるか判定する
 11. candidatesへ保存または更新する
 12. function_logsへ実行結果を保存する
+
+抽出実行ごとに `candidate_sync_runs/{runId}` と配下changesへ差分を保存し、誤抽出時にrun単位で解除できるようにする。
+送信履歴または送信キューに関わった候補、後続抽出で更新済みの候補は解除対象からスキップする。
 
 ---
 
@@ -437,6 +440,8 @@ GoRouterを想定する。
  ↓
 候補一覧画面で「候補抽出」を押す
  ↓
+必要に応じてタグ検索モードを切り替える
+ ↓
 FlutterからsyncCandidatesを呼び出す
  ↓
 Cloud FunctionsがX APIで投稿検索
@@ -539,7 +544,7 @@ queue item.status = sent
 | DM送信 | 1件ずつ送信できること |
 | 送信履歴 | 送信成功時に履歴が保存されること |
 | 手動送信記録 | manualとして履歴保存されること |
-| 成果登録 | 成果報酬額が正しく計算されること |
+| 成約記録登録 | 成果対象者、対象売上、補足メモが保存されること |
 
 ---
 
@@ -603,7 +608,8 @@ queue item.status = sent
 
 本システムは、Flutter Web、Firebase、Cloud Functions TypeScriptを中心とした小規模かつ拡張可能な構成で実装する。
 
-初期MVPでは、候補抽出、プロフィール除外、候補一覧、送信キュー、個別DM送信支援、送信履歴、成果証跡管理に絞って実装する。
+初期MVPでは、候補抽出、プロフィール除外、候補一覧、送信キュー、個別DM送信支援、送信履歴に絞って実装する。
+成果記録UIは初期運用ではメイン導線から外し、必要時に成約記録/成果メモとして再設計する。
 
 DM送信は、候補者ごとに管理者が内容を確認し、1件ずつ送信操作を行う方式とする。
 
@@ -630,7 +636,7 @@ MVP開発では、管理画面の全実装に先行してX API検証を行う。
 | DM送信 | 1ユーザーに対してDM送信APIを実行できること |
 | レート制限 | 想定運用件数で制限に抵触しないこと |
 
-DM送信APIが利用できない場合でもMVPを成立させるため、手動送信支援モードを標準実装とする。
+DM送信APIを基本送信手段とし、API失敗時や運用停止時の代替として手動送信支援モードを残す。
 
 ### 24.2 送信方式
 
@@ -705,15 +711,15 @@ conversions/{conversionId}
 | firstFoundAt | timestamp | - | 初回抽出日時 |
 | firstContactedAt | timestamp | - | 初回接触日時 |
 | salesAmount | number | ○ | 対象売上 |
-| rewardRate | number | ○ | 成果報酬率 |
-| rewardAmount | number | ○ | 成果報酬額 |
-| evidenceNote | string | - | 証跡補足 |
+| rewardRate | number | - | 旧仕様互換用。現行UIでは使用しない |
+| rewardAmount | number | - | 旧仕様互換用。現行UIでは使用しない |
+| evidenceNote | string | - | 補足メモ |
 | status | string | ○ | draft / reported / paid / canceled |
 | createdBy | string | ○ | 登録者UID |
 | createdAt | timestamp | ○ | 作成日時 |
 | updatedAt | timestamp | ○ | 更新日時 |
 
-`rewardAmount` は、登録時点の `salesAmount` と `rewardRate` から計算し、スナップショットとして保存する。
+成果報酬率と成果報酬額は本システムでは計算せず、クライアント側で別途算定する。
 
 ### 24.6 管理者権限設計
 

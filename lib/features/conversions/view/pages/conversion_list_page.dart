@@ -13,12 +13,11 @@ class ConversionListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final dependencies = AppProviders.of(context);
     return AppScaffold(
-      title: '成果報告管理',
+      title: '成約記録',
       body: _ConversionPageBody(
         listVm: ConversionListVm(dependencies.loadConversions),
         formVm: ConversionFormVm(
           dependencies.loadSendHistories,
-          dependencies.loadScoutSettings,
           dependencies.createConversion,
         ),
       ),
@@ -83,7 +82,10 @@ class _ConversionForm extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('成果登録', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  '成約記録を登録',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: state.selectedHistoryId,
@@ -113,25 +115,6 @@ class _ConversionForm extends StatelessWidget {
                         onChanged: vm.changeSalesAmount,
                       ),
                     ),
-                    SizedBox(
-                      width: 180,
-                      child: TextFormField(
-                        initialValue: state.rewardRateText,
-                        enabled: !state.isSubmitting,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(labelText: '報酬率'),
-                        onChanged: vm.changeRewardRate,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 180,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(labelText: '報酬額'),
-                        child: Text(_formatMoney(state.rewardAmount)),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -139,7 +122,7 @@ class _ConversionForm extends StatelessWidget {
                   initialValue: state.evidenceNote,
                   enabled: !state.isSubmitting,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: '証跡補足'),
+                  decoration: const InputDecoration(labelText: '補足メモ'),
                   onChanged: vm.changeEvidenceNote,
                 ),
                 if (state.errorMessage != null) ...[
@@ -158,7 +141,7 @@ class _ConversionForm extends StatelessWidget {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: state.isSubmitting ? null : vm.submit,
-                  child: Text(state.isSubmitting ? '登録中' : '成果登録'),
+                  child: Text(state.isSubmitting ? '登録中' : '成約記録を登録'),
                 ),
               ],
             ),
@@ -187,7 +170,7 @@ class _ConversionList extends StatelessWidget {
           return Center(child: Text(state.errorMessage!));
         }
         if (state.conversions.isEmpty) {
-          return const Center(child: Text('成果証跡はまだ登録されていません。'));
+          return const Center(child: Text('成約記録はまだ登録されていません。'));
         }
         return _ConversionTable(conversions: state.conversions);
       },
@@ -209,8 +192,6 @@ class _ConversionTable extends StatelessWidget {
           DataColumn(label: Text('候補者')),
           DataColumn(label: Text('Xユーザー名')),
           DataColumn(label: Text('対象売上')),
-          DataColumn(label: Text('報酬率')),
-          DataColumn(label: Text('報酬額')),
           DataColumn(label: Text('ステータス')),
           DataColumn(label: Text('登録日時')),
         ],
@@ -220,8 +201,6 @@ class _ConversionTable extends StatelessWidget {
               DataCell(Text(conversion.displayUserName)),
               DataCell(Text(_username(conversion))),
               DataCell(Text(_formatMoney(conversion.salesAmount))),
-              DataCell(Text(_formatRate(conversion.rewardRate))),
-              DataCell(Text(_formatMoney(conversion.rewardAmount))),
               DataCell(Text(conversion.statusLabel)),
               DataCell(Text(_formatDateTime(conversion.createdAt))),
             ],
@@ -244,10 +223,6 @@ String _formatMoney(num? value) {
     return '-';
   }
   return value.round().toString();
-}
-
-String _formatRate(num value) {
-  return value.toString();
 }
 
 String _formatDateTime(DateTime? value) {

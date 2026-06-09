@@ -7,11 +7,11 @@ class Conversion {
     required this.xUserId,
     required this.username,
     required this.salesAmount,
-    required this.rewardRate,
-    required this.rewardAmount,
     required this.status,
     this.displayName,
     this.sendHistoryId,
+    this.rewardRate,
+    this.rewardAmount,
     this.evidenceNote,
     this.createdBy,
     this.createdAt,
@@ -25,8 +25,8 @@ class Conversion {
   final String? displayName;
   final String? sendHistoryId;
   final num salesAmount;
-  final num rewardRate;
-  final num rewardAmount;
+  final num? rewardRate;
+  final num? rewardAmount;
   final String? evidenceNote;
   final String status;
   final String? createdBy;
@@ -70,10 +70,10 @@ class Conversion {
           ? json['sendHistoryId'] as String
           : null,
       salesAmount: json['salesAmount'] is num ? json['salesAmount'] as num : 0,
-      rewardRate: json['rewardRate'] is num ? json['rewardRate'] as num : 0,
+      rewardRate: json['rewardRate'] is num ? json['rewardRate'] as num : null,
       rewardAmount: json['rewardAmount'] is num
           ? json['rewardAmount'] as num
-          : 0,
+          : null,
       evidenceNote: json['evidenceNote'] is String
           ? json['evidenceNote'] as String
           : null,

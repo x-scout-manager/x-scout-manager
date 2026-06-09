@@ -8,13 +8,11 @@ class CreateConversion {
   Future<String> call({
     required String sendHistoryId,
     required num salesAmount,
-    num? rewardRate,
     String? evidenceNote,
   }) {
     return _repository.createConversion(
       sendHistoryId: sendHistoryId,
       salesAmount: salesAmount,
-      rewardRate: rewardRate,
       evidenceNote: evidenceNote,
     );
   }

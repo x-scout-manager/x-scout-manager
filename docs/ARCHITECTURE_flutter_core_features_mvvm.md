@@ -7,7 +7,7 @@
 - feature単位で分割する
 - feature内は MVVM（View / ViewModel / Model）で分離する
 - Firebase Authentication、Firestore、Cloud Functions呼び出しは Repository に閉じる
-- 候補抽出、送信キュー作成、送信済み登録、成果登録などの業務手順は UseCase に寄せる
+- 候補抽出、送信キュー作成、送信済み登録、成約記録登録などの業務手順は UseCase に寄せる
 - feature横断の共通UI、エラー、Firebase初期化、認証セッション、ユーティリティは core に集約する
 - X APIトークンやシークレットはFlutter Web側に保持しない
 
@@ -221,7 +221,6 @@ lib/
         conversion_functions_repository.dart
       usecase/
         create_conversion.dart
-        calculate_reward.dart
         load_conversions.dart
       vm/
         conversion_list_vm.dart
@@ -283,7 +282,7 @@ lib/
 ### 3.5 UseCase
 
 - 業務手順を固定する
-- 候補抽出、送信キュー作成、手動送信済み登録、API送信、成果登録などを扱う
+- 候補抽出、送信キュー作成、手動送信済み登録、API送信、成約記録登録などを扱う
 - 複数Repositoryをまたぐ処理の入口にする
 
 ## 4. 依存関係ルール
@@ -308,7 +307,7 @@ Modelは各レイヤーから参照してよいが、Model自身はFirebase SDK�
 - `send_histories` は送信証跡の正本として扱う
 - `excluded_accounts` は除外対象の正本として扱う
 - `candidates.status` と `candidates.isExcluded` は表示・検索用スナップショットとして扱う
-- DM送信、手動送信済み登録、成果登録はCloud Functions経由を原則とする
+- DM送信、手動送信済み登録、成約記録登録はCloud Functions経由を原則とする
 - 二重送信防止はUIだけでなくCloud FunctionsとFirestore transactionで担保する
 - X API秘密情報はCloud Functions側の設定またはSecret Managerで管理する
 
@@ -323,7 +322,7 @@ Modelは各レイヤーから参照してよいが、Model自身はFirebase SDK�
 | 送信履歴 | histories |
 | 除外リスト / 除外キーワード設定 | exclusions |
 | テンプレート | templates |
-| 成果報告管理 | conversions |
+| 成約記録 | conversions |
 | タグ設定 / システム設定 | settings |
 
 ## 7. 状態管理
@@ -346,7 +345,6 @@ Modelは各レイヤーから参照してよいが、Model自身はFirebase SDK�
 - `excludeCandidate`
 - `restoreCandidate`
 - `createConversion`
-- `calculateReward`
 
 Flutter側のRepositoryは、callable関数の呼び出しとレスポンス変換のみを担当する。
 

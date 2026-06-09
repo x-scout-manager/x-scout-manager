@@ -7,10 +7,8 @@ abstract interface class ConversionFunctionsRepository {
   Future<String> createConversion({
     required String sendHistoryId,
     required num salesAmount,
-    num? rewardRate,
     String? evidenceNote,
   });
-  Future<num> calculateReward({required num salesAmount, num? rewardRate});
 }
 
 class FirebaseConversionFunctionsRepository
@@ -22,34 +20,9 @@ class FirebaseConversionFunctionsRepository
   final FirebaseFunctions _functions;
 
   @override
-  Future<num> calculateReward({
-    required num salesAmount,
-    num? rewardRate,
-  }) async {
-    try {
-      final callable = _functions.httpsCallable('calculateReward');
-      final payload = <String, dynamic>{'salesAmount': salesAmount};
-      if (rewardRate != null) {
-        payload['rewardRate'] = rewardRate;
-      }
-      final result = await callable.call<Map<String, dynamic>>(payload);
-      final rewardAmount = result.data['rewardAmount'];
-      if (rewardAmount is! num) {
-        throw const AppError('成果報酬額を確認できませんでした。');
-      }
-      return rewardAmount;
-    } on AppError {
-      rethrow;
-    } catch (error) {
-      throw FunctionsErrorMapper.map(error);
-    }
-  }
-
-  @override
   Future<String> createConversion({
     required String sendHistoryId,
     required num salesAmount,
-    num? rewardRate,
     String? evidenceNote,
   }) async {
     try {
@@ -58,9 +31,6 @@ class FirebaseConversionFunctionsRepository
         'sendHistoryId': sendHistoryId,
         'salesAmount': salesAmount,
       };
-      if (rewardRate != null) {
-        payload['rewardRate'] = rewardRate;
-      }
       if (evidenceNote != null && evidenceNote.trim().isNotEmpty) {
         payload['evidenceNote'] = evidenceNote.trim();
       }
