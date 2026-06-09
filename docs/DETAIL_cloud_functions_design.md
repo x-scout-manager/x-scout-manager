@@ -8,6 +8,10 @@ Cloud Functions for Firebaseで実装するサーバーサイド処理の入出�
 
 ## 2. 共通方針
 
+### 2.0 Runtime
+
+Cloud FunctionsはNode.js 22 runtimeを利用する。
+
 ### 2.1 関数形式
 
 初期MVPでは callable functions を利用する。
@@ -45,6 +49,40 @@ Flutter WebからはRepository経由で呼び出し、ViewやViewModelから直�
 
 秘密情報、アクセストークン、DM本文の過剰なログ出力は禁止する。
 
+### 2.5 ファイル構成
+
+Cloud Functionsの処理本体は、`functions/src/index.ts` に直接集約しない。
+`index.ts` はCallable Functionsのexport集約を主責務とし、処理本体は責務別ファイルへ配置する。
+
+```text
+functions/src/
+  index.ts
+  app.ts
+  auth/
+    require_admin.ts
+  shared/
+    firebase.ts
+    validators.ts
+    errors.ts
+    types.ts
+  x/
+    x_search.ts
+  candidates/
+    sync_candidates.ts
+    revert_candidate_sync_run.ts
+    candidate_sync_run_repository.ts
+  send_queue/
+    create_send_queue.ts
+    mark_as_manually_sent.ts
+  exclusions/
+    exclude_candidate.ts
+    restore_candidate.ts
+  conversions/
+    create_conversion.ts
+```
+
+以後追加するFunctionsも、機能別ディレクトリへ処理本体を置き、`index.ts` からexportする。
+
 ## 3. 共通ヘルパー
 
 | ヘルパー | 役割 |
@@ -72,6 +110,11 @@ Flutter WebからはRepository経由で呼び出し、ViewやViewModelから直�
 | maxPages | number | - | 最大ページ数 |
 
 指定がない値は `settings/scout` を利用する。
+タグ検索条件は `settings/scout.tagSearchMode` を利用する。
+
+- `per_tag`: タグごとに個別検索する。既存挙動。
+- `any`: 複数タグをOR条件でまとめて検索する。
+- `all`: 複数タグをAND条件でまとめて検索する。
 
 ### output
 
@@ -82,12 +125,14 @@ Flutter WebからはRepository経由で呼び出し、ViewやViewModelから直�
 | excludedCount | number | 除外保存数 |
 | skippedSentCount | number | 既送信のためスキップした件数 |
 | tags | array<string> | 実行対象タグ |
+| tagSearchMode | string | 実行時のタグ検索条件 |
+| runId | string | 抽出実行ID |
 
 ### 処理
 
 1. 管理者権限を確認
 2. `settings/scout` を取得
-3. 対象タグ、取得件数、最大ページ数を決定
+3. 対象タグ、タグ検索条件、取得件数、最大ページ数を決定
 4. X APIで投稿検索
 5. 投稿主ユーザー情報を取得
 6. `candidates/{xUserId}` を確認
@@ -97,15 +142,52 @@ Flutter WebからはRepository経由で呼び出し、ViewやViewModelから直�
 10. 除外対象は `excluded_accounts` に保存し、`candidates` にも `status = excluded` として反映
 11. 既送信対象は候補化しない。必要に応じて既存candidateを `isSent = true` に更新
 12. 候補は `candidates` に upsert
-13. `function_logs` に結果保存
+13. `candidate_sync_runs/{runId}` と配下changesに解除用差分を保存
+14. `function_logs` に結果保存
 
 ### 注意
 
 - X APIのページングは上限を必ず設ける
 - 同一ユーザーは `xUserId` で統合する
 - X API失敗時は部分成功を許可するか要検討。初期MVPでは関数単位で失敗扱い
+- X API Bearer TokenはSecret Manager `X_BEARER_TOKEN` で保持し、Flutter Webへ渡さない
+- 2026-05-14実装では `sourcePostIds` は最大50件まで保持する
 
-## 5. createSendQueue
+## 5. revertCandidateSyncRun
+
+### 概要
+
+候補抽出run単位で、抽出時に作成・更新した候補を抽出前の状態へ戻す。
+
+### input
+
+| フィールド | 型 | 必須 | 内容 |
+|---|---|---|---|
+| runId | string | ○ | `candidate_sync_runs/{runId}` |
+
+### output
+
+| フィールド | 型 | 内容 |
+|---|---|---|
+| runId | string | 解除対象run |
+| revertedCount | number | 既存候補を抽出前状態へ戻した件数 |
+| deletedCount | number | 抽出で新規作成された候補を削除した件数 |
+| skippedCount | number | 保護条件によりスキップした件数 |
+
+### 処理
+
+1. 管理者権限を確認
+2. `candidate_sync_runs/{runId}` が `completed` であることを確認
+3. 配下changesを取得
+4. 送信履歴が存在する候補はスキップ
+5. 送信キューitemが存在する候補はスキップ
+6. `lastSyncRunId` が対象runと異なる候補は後続抽出済みとしてスキップ
+7. `beforeSnapshot = null` の候補は削除
+8. `beforeSnapshot` がある候補は抽出前状態へ戻す
+9. 除外データも `beforeExcludedSnapshot` に基づいて戻す
+10. runを `status = reverted` に更新し、解除結果を保存する
+
+## 6. createSendQueue
 
 ### input
 
@@ -271,48 +353,24 @@ X API呼び出しはtransaction外で行う。transaction内では送信ロッ�
 | candidateId | string | ○ | 候補ID |
 | sendHistoryId | string | - | 送信履歴ID |
 | salesAmount | number | ○ | 対象売上 |
-| rewardRate | number | - | 報酬率。未指定ならsettings |
-| evidenceNote | string | - | 証跡補足 |
+| evidenceNote | string | - | 補足メモ |
 
 ### output
 
 | フィールド | 型 | 内容 |
 |---|---|---|
 | conversionId | string | 成果ID |
-| rewardAmount | number | 成果報酬額 |
 
 ### 処理
 
 1. 管理者権限を確認
 2. candidateを取得
 3. sendHistoryId指定がある場合は履歴を取得
-4. `rewardAmount = salesAmount * rewardRate`
-5. candidate、send_history、settingsの値をスナップショットとして保存
-6. `conversions` 作成
+4. candidate、send_history、対象売上をスナップショットとして保存
+5. `conversions` 作成
+6. 成果報酬率・成果報酬額は保存しない。算定はクライアント側で別途行う
 
-## 11. calculateReward
-
-### input
-
-| フィールド | 型 | 必須 | 内容 |
-|---|---|---|---|
-| salesAmount | number | ○ | 対象売上 |
-| rewardRate | number | - | 報酬率 |
-
-### output
-
-| フィールド | 型 | 内容 |
-|---|---|---|
-| rewardAmount | number | 成果報酬額 |
-| rewardRate | number | 利用した報酬率 |
-
-### 処理
-
-1. 管理者権限を確認
-2. rewardRate未指定の場合は `settings/scout.defaultRewardRate`
-3. 成果報酬額を計算して返却
-
-## 12. skipQueueItem
+## 11. skipQueueItem
 
 基本設計では未定義だが、UI操作としてスキップが存在するためMVPで実装対象とする。
 
@@ -336,8 +394,8 @@ X API呼び出しはtransaction外で行う。transaction内では送信ロッ�
 3. markAsManuallySent
 4. createSendQueue
 5. excludeCandidate / restoreCandidate
-6. createConversion / calculateReward
+6. createConversion
 7. syncCandidates
 8. sendDirectMessage
 
-初期MVPでは手動送信支援を先に成立させ、X API DM送信は検証完了後に有効化する。
+X API DM送信は基本送信手段として実装し、手動送信支援はAPI失敗時や運用停止時のフォールバックとして残す。

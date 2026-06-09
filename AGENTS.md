@@ -17,6 +17,9 @@
 - 実装後はセルフレビューを行うこと。
 - Flutter実装後は `flutter analyze` を行い、コマンドが通らない場合は原因を確認すること。
 - Cloud Functions実装後は該当するTypeScriptのlint、build、testを実行すること。
+- Cloud Functionsを追加・変更する場合、原則として `functions/src/index.ts` に処理本体を直接追加しないこと。
+- `functions/src/index.ts` はexport集約に寄せ、処理本体は `functions/src/{domain}/` または `functions/src/shared/` 配下の責務別ファイルへ配置すること。
+- 既存の `functions/src/index.ts` 内処理は、保守性改善タスクで段階的に責務別ファイルへ分離すること。
 
 ## Xスカウトツール固有ルール
 
@@ -82,6 +85,7 @@
 - `view / vm / usecase / data / model` の責務分離を守る。
 - FirestoreやCloud FunctionsへのアクセスはRepositoryに閉じる。
 - 一時的な回避実装を入れる場合は、削除条件をコメントで残す。
+- Cloud Functions実装では、認証、入力検証、X API通信、Firestore更新、callable exportの責務を分離する。
 
 ### 4. セルフレビュー
 

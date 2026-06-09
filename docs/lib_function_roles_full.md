@@ -24,13 +24,13 @@
 | `lib/core/serialization/**` | Firestore/JSON変換用の共通境界 |
 | `lib/features/auth/**` | ログイン、セッション、ユーザー取得のfeature構成 |
 | `lib/features/dashboard/**` | 候補数・送信済み数・除外数など概要表示のfeature構成 |
-| `lib/features/candidates/**` | 候補一覧、候補詳細、候補抽出、除外/復元のfeature構成 |
+| `lib/features/candidates/**` | 候補一覧、候補詳細、候補抽出、抽出履歴/解除、タグ検索モード切替、除外/復元のfeature構成 |
 | `lib/features/send_queue/**` | 送信キュー作成、個別DM送信、手動送信済み登録、スキップのfeature構成 |
 | `lib/features/templates/**` | DMテンプレート一覧・保存のfeature構成 |
 | `lib/features/histories/**` | 送信履歴表示のfeature構成 |
 | `lib/features/exclusions/**` | 除外アカウント、除外キーワード設定のfeature構成 |
-| `lib/features/conversions/**` | 成果登録、成果報酬計算、成果一覧のfeature構成 |
-| `lib/features/settings/**` | タグ設定、システム設定のfeature構成 |
+| `lib/features/conversions/**` | 初期運用ではメイン導線から非表示。将来の成約記録/成果メモ用feature構成 |
+| `lib/features/settings/**` | タグ設定、システム設定、候補抽出設定モデルのfeature構成 |
 | `web/index.html` | Flutter WebのHTMLエントリポイント |
 | `web/manifest.json` | Webアプリのマニフェスト |
 | `test/widget_test.dart` | 初期画面がダッシュボードとして表示されることを確認するWidgetテスト |
@@ -52,15 +52,14 @@
 | `lib/features/dashboard/vm/dashboard_vm.dart` | ダッシュボード集計の読込、ローディング、エラー状態を管理 |
 | `lib/features/dashboard/view/pages/dashboard_page.dart` | ダッシュボード集計UIをVMへ接続する画面 |
 | `lib/features/dashboard/view/widgets/summary_tiles.dart` | ダッシュボードの主要指標タイル表示 |
-| `lib/features/conversions/model/conversion.dart` | 成果証跡の表示用モデルとFirestore変換 |
+| `lib/features/conversions/model/conversion.dart` | 成果記録の表示用モデルとFirestore変換 |
 | `lib/features/conversions/data/firestore_conversion_repository.dart` | `conversions` を購読して成果一覧へ渡すRepository |
-| `lib/features/conversions/data/conversion_functions_repository.dart` | 成果登録・報酬計算Callable Functionsの呼び出し境界 |
+| `lib/features/conversions/data/conversion_functions_repository.dart` | 成約記録登録Callable Functionの呼び出し境界 |
 | `lib/features/conversions/usecase/load_conversions.dart` | 成果一覧を購読するUseCase |
-| `lib/features/conversions/usecase/create_conversion.dart` | 送信履歴起点で成果証跡を作成するUseCase |
-| `lib/features/conversions/usecase/calculate_reward.dart` | 対象売上と報酬率から成果報酬額を計算するUseCase |
+| `lib/features/conversions/usecase/create_conversion.dart` | 送信履歴起点で成果記録を作成するUseCase |
 | `lib/features/conversions/vm/conversion_list_vm.dart` | 成果一覧の読込、ローディング、エラー状態を管理 |
-| `lib/features/conversions/vm/conversion_form_vm.dart` | 成果登録フォームの送信履歴選択、売上、報酬率、登録状態を管理 |
-| `lib/features/conversions/view/pages/conversion_list_page.dart` | 成果登録フォームと成果一覧を表示する画面 |
+| `lib/features/conversions/vm/conversion_form_vm.dart` | 成約記録フォームの送信履歴選択、売上、登録状態を管理 |
+| `lib/features/conversions/view/pages/conversion_list_page.dart` | 初期運用では非表示の成果記録画面 |
 | `lib/features/candidates/data/candidate_functions_repository.dart` | 候補除外/復元など候補系Callable Functionsの呼び出し境界 |
 | `lib/features/candidates/usecase/exclude_candidate.dart` | 候補を除外リストへ追加するUseCase |
 | `lib/features/candidates/usecase/restore_candidate.dart` | 候補を除外リストから復元するUseCase |
@@ -80,6 +79,21 @@
 | `firebase.json` | Hosting、Firestore、Functions、EmulatorのFirebase設定 |
 | `firestore.rules` | Firestore Security Rules。未ログイン拒否、admin参照、重要書き込みFunctions限定 |
 | `firestore.indexes.json` | 初期MVPで想定するFirestore複合インデックス |
-| `functions/package.json` | Cloud Functions依存関係とbuild/lint/test scripts |
+| `functions/package.json` | Cloud Functions依存関係、Node.js 22 runtime指定、build/lint/test scripts |
 | `functions/tsconfig.json` | Cloud Functions TypeScriptコンパイル設定 |
-| `functions/src/index.ts` | Functions entrypoint。認証確認、送信キュー作成、手動送信済み登録、候補除外/復元、成果登録/報酬計算を定義 |
+| `functions/src/index.ts` | Functions entrypoint。Callable Functionsのexport集約 |
+| `functions/src/app.ts` | `healthCheck`、`adminHealthCheck` のCallable定義 |
+| `functions/src/auth/require_admin.ts` | 認証済み管理者確認。`users/{uid}` のrole/isActiveを検証 |
+| `functions/src/shared/firebase.ts` | Firebase Admin初期化、Functions global options、Firestore client共有 |
+| `functions/src/shared/types.ts` | Cloud Functions側の共通データ型 |
+| `functions/src/shared/validators.ts` | 入力正規化、数値変換、タグ/文字列配列の共通バリデーション |
+| `functions/src/shared/errors.ts` | Functionsエラーをログ保存用payloadへ変換 |
+| `functions/src/x/x_search.ts` | X API Bearer Token取得、Recent Searchクエリ生成、X API検索通信 |
+| `functions/src/candidates/sync_candidates.ts` | タグ検索条件に応じたX API候補抽出とFirestore保存 |
+| `functions/src/candidates/revert_candidate_sync_run.ts` | 候補抽出run単位の解除処理 |
+| `functions/src/candidates/candidate_sync_run_repository.ts` | 抽出run解除用差分 `candidate_sync_runs/{runId}/changes` の保存 |
+| `functions/src/send_queue/create_send_queue.ts` | 候補から送信キューを作成するCallable定義 |
+| `functions/src/send_queue/mark_as_manually_sent.ts` | 手動送信済み登録、送信履歴作成、キュー/候補状態更新 |
+| `functions/src/exclusions/exclude_candidate.ts` | 候補の除外リスト登録と関連キュー明細の除外更新 |
+| `functions/src/exclusions/restore_candidate.ts` | 除外済み候補の復元 |
+| `functions/src/conversions/create_conversion.ts` | 送信履歴起点の成果記録作成 |
