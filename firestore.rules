@@ -36,7 +36,7 @@ service cloud.firestore {
       allow read: if isActiveAdmin();
       allow write: if false;
 
-      match /items/{itemId} {
+      match /changes/{changeId} {
         allow read: if isActiveAdmin();
         allow write: if false;
       }
@@ -60,6 +60,16 @@ service cloud.firestore {
     match /function_logs/{logId} {
       allow read: if isActiveAdmin();
       allow write: if false;
+    }
+
+    match /candidate_sync_runs/{runId} {
+      allow read: if isActiveAdmin();
+      allow write: if false;
+
+      match /items/{itemId} {
+        allow read: if isActiveAdmin();
+        allow write: if false;
+      }
     }
 
     match /{document=**} {

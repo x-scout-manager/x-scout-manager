@@ -112,9 +112,6 @@ class SystemSettingVm extends ChangeNotifier {
     if (settings.recentSearchDays < 1 || settings.recentSearchDays > 30) {
       return '検索対象日数は1〜30で入力してください。';
     }
-    if (settings.defaultRewardRate < 0 || settings.defaultRewardRate > 1) {
-      return '標準成果報酬率は0〜1で入力してください。';
-    }
     return null;
   }
 

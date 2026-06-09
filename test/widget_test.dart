@@ -8,6 +8,7 @@ import 'package:x_scout_manager/features/auth/model/app_user.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_repository.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_functions_repository.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate.dart';
+import 'package:x_scout_manager/features/candidates/model/candidate_sync_run.dart';
 import 'package:x_scout_manager/features/conversions/data/conversion_functions_repository.dart';
 import 'package:x_scout_manager/features/conversions/data/conversion_repository.dart';
 import 'package:x_scout_manager/features/conversions/model/conversion.dart';
@@ -139,6 +140,11 @@ class _FakeCandidateRepository implements CandidateRepository {
   }
 
   @override
+  Stream<List<CandidateSyncRun>> watchRecentSyncRuns() {
+    return Stream.value(const []);
+  }
+
+  @override
   Future<Candidate?> findById(String candidateId) async {
     return null;
   }
@@ -156,7 +162,28 @@ class _FakeCandidateFunctionsRepository
   Future<void> restoreCandidate(String candidateId) async {}
 
   @override
-  Future<void> syncCandidates() async {}
+  Future<SyncCandidatesResult> syncCandidates() async {
+    return const SyncCandidatesResult(
+      createdCount: 0,
+      updatedCount: 0,
+      excludedCount: 0,
+      skippedSentCount: 0,
+      totalFoundCount: 0,
+      tags: [],
+    );
+  }
+
+  @override
+  Future<RevertCandidateSyncRunResult> revertCandidateSyncRun(
+    String runId,
+  ) async {
+    return RevertCandidateSyncRunResult(
+      runId: runId,
+      revertedCount: 0,
+      deletedCount: 0,
+      skippedCount: 0,
+    );
+  }
 }
 
 class _FakeConversionRepository implements ConversionRepository {
@@ -169,18 +196,9 @@ class _FakeConversionRepository implements ConversionRepository {
 class _FakeConversionFunctionsRepository
     implements ConversionFunctionsRepository {
   @override
-  Future<num> calculateReward({
-    required num salesAmount,
-    num? rewardRate,
-  }) async {
-    return (salesAmount * (rewardRate ?? 0.1)).round();
-  }
-
-  @override
   Future<String> createConversion({
     required String sendHistoryId,
     required num salesAmount,
-    num? rewardRate,
     String? evidenceNote,
   }) async {
     return 'conversion-id';

@@ -109,12 +109,13 @@ settings/scout
 |---|---|---|---|
 | tags | array<string> | ○ | 対象タグ |
 | exclusionKeywords | array<string> | ○ | 除外キーワード |
+| tagSearchMode | string | ○ | タグ検索条件。`per_tag` / `any` / `all` |
 | searchMaxResults | number | ○ | 1回の検索取得件数 |
 | searchMaxPages | number | ○ | 最大ページ数 |
 | recentSearchDays | number | ○ | 検索対象日数。X API制限内で設定 |
-| defaultRewardRate | number | ○ | 標準成果報酬率。初期値 `0.1` |
-| apiDmEnabled | boolean | ○ | X API DM送信を有効化するか |
-| manualSendEnabled | boolean | ○ | 手動送信支援を有効化するか |
+| defaultRewardRate | number | - | 旧仕様互換用。現行UIでは使用しない |
+| apiDmEnabled | boolean | ○ | API送信を有効化するか |
+| manualSendEnabled | boolean | ○ | API送信失敗時などの手動送信フォールバックを有効化するか |
 | createdAt | timestamp | ○ | 作成日時 |
 | updatedAt | timestamp | ○ | 更新日時 |
 | updatedBy | string | ○ | 更新者UID |
@@ -178,6 +179,7 @@ candidateId = xUserId
 | displayName | string | - | 表示名 |
 | profileText | string | - | プロフィール文 |
 | profileUrl | string | - | XプロフィールURL |
+| sourceTypes | array<string> | ○ | 抽出元種別。初期は `post_search`。追加開発で `profile_search` を追加予定 |
 | sourceTags | array<string> | ○ | 抽出元タグ一覧 |
 | sourcePostIds | array<string> | - | 抽出元投稿ID一覧 |
 | status | string | ○ | `candidate / sending / sent / excluded / failed` |
@@ -195,7 +197,9 @@ candidateId = xUserId
 ### 更新方針
 
 - `sourceTags` は重複を除いて追記する
+- `sourceTypes` は重複を除いて追記する。初期開発では投稿検索のみを対象にする
 - `sourcePostIds` は上限を設ける。初期MVPでは最大50件
+- プロフィール文検索は初期開発対象外。追加開発で `sourceTypes = profile_search` として同じ候補モデルへ統合する
 - `isExcluded` は `excluded_accounts` を正本として同期する
 - `isSent` は `send_histories` 作成時に同期する
 - 送信中ロックでは `status = sending` を使用する
@@ -322,7 +326,7 @@ conversions/{conversionId}
 
 ### 用途
 
-成果報酬算定の証跡。
+成果発生の証跡。成果報酬の算定はクライアント側で別途行うため、本システムでは報酬率・報酬額を入力/表示しない。
 
 ### フィールド
 
@@ -338,21 +342,18 @@ conversions/{conversionId}
 | firstFoundAt | timestamp | - | 初回抽出日時 |
 | firstContactedAt | timestamp | - | 初回接触日時 |
 | salesAmount | number | ○ | 対象売上 |
-| rewardRate | number | ○ | 成果報酬率 |
-| rewardAmount | number | ○ | 成果報酬額 |
-| evidenceNote | string | - | 証跡補足 |
+| rewardRate | number | - | 旧仕様互換用。現行UIでは使用しない |
+| rewardAmount | number | - | 旧仕様互換用。現行UIでは使用しない |
+| evidenceNote | string | - | 補足メモ |
 | status | string | ○ | `draft / reported / paid / canceled` |
 | createdBy | string | ○ | 登録者UID |
 | createdAt | timestamp | ○ | 作成日時 |
 | updatedAt | timestamp | ○ | 更新日時 |
 
-### 計算方針
+### 保存方針
 
-```text
-rewardAmount = salesAmount * rewardRate
-```
-
-登録時点の値をスナップショットとして保存する。
+登録時点の候補、送信履歴、対象売上をスナップショットとして保存する。
+成果報酬率と成果報酬額は本システムでは計算せず、クライアント側の別管理とする。
 
 ## 11. function_logs
 
@@ -379,7 +380,62 @@ Cloud Functions実行結果の簡易ログ。
 | errorMessage | string | - | エラー内容 |
 | createdAt | timestamp | ○ | 作成日時 |
 
-## 12. インデックス方針
+## 12. candidate_sync_runs
+
+### パス
+
+```text
+candidate_sync_runs/{runId}
+candidate_sync_runs/{runId}/changes/{candidateId}
+```
+
+### 用途
+
+X API候補抽出の実行単位と、解除用の差分を保存する。
+
+### `candidate_sync_runs/{runId}` フィールド
+
+| フィールド | 型 | 必須 | 内容 |
+|---|---|---|---|
+| runId | string | ○ | 抽出実行ID |
+| status | string | ○ | `running / completed / reverted / failed` |
+| tags | array<string> | ○ | 実行対象タグ |
+| tagSearchMode | string | ○ | タグ検索条件 |
+| maxResults | number | ○ | 1ページ件数 |
+| maxPages | number | ○ | 最大ページ数 |
+| recentSearchDays | number | ○ | 検索対象日数 |
+| result | map | - | 実行結果件数 |
+| revertResult | map | - | 解除結果件数 |
+| createdAt | timestamp | ○ | 実行開始日時 |
+| completedAt | timestamp | - | 実行完了日時 |
+| revertedAt | timestamp | - | 解除日時 |
+| createdBy | string | ○ | 実行者UID |
+| revertedBy | string | - | 解除者UID |
+
+### `changes/{candidateId}` フィールド
+
+| フィールド | 型 | 必須 | 内容 |
+|---|---|---|---|
+| candidateId | string | ○ | 候補ID |
+| xUserId | string | ○ | XユーザーID |
+| action | string | ○ | `created / updated / excluded_by_keyword / existing_excluded_updated / sent_updated` |
+| beforeSnapshot | map/null | ○ | 抽出前のcandidate |
+| afterSnapshot | map | ○ | 抽出時に反映したcandidate値 |
+| beforeExcludedSnapshot | map/null | ○ | 抽出前のexcluded_accounts |
+| afterExcludedSnapshot | map/null | ○ | 抽出時に反映したexcluded_accounts値 |
+| revertStatus | string | ○ | `active / reverted` |
+| createdAt | timestamp | ○ | 作成日時 |
+| revertedAt | timestamp | - | 解除日時 |
+
+### 解除方針
+
+- 新規作成候補は削除する
+- 既存更新候補は `beforeSnapshot` に戻す
+- 除外キーワード一致で作成した除外データは抽出前状態へ戻す
+- 送信履歴または送信キューitemが存在する候補はスキップする
+- `lastSyncRunId` が対象runと異なる候補は後続抽出済みとしてスキップする
+
+## 13. インデックス方針
 
 初期MVPで想定する複合インデックスは以下。
 単一フィールドの昇順・降順検索はFirestoreの標準単一フィールドインデックスを利用する。
@@ -392,19 +448,21 @@ Cloud Functions実行結果の簡易ログ。
 | send_histories | `xUserId asc, sentAt desc` | 既送信確認 |
 | send_queues | `createdBy asc, createdAt desc` | キュー一覧 |
 | send_queues/{queueId}/items | `status asc, order asc` | キュー明細 |
+| items collection group | `candidateId asc` | 候補が送信キュー明細に存在するかの確認。候補除外/抽出解除の保護条件 |
 | conversions | `status asc, createdAt desc` | 成果一覧 |
 | function_logs | `functionName asc, createdAt desc` | 実行ログ確認 |
+| candidate_sync_runs | `createdAt desc` | 候補抽出履歴 |
 
-## 13. Security Rules方針
+## 14. Security Rules方針
 
-### 13.1 基本方針
+### 14.1 基本方針
 
 - 未ログインユーザーは全拒否
 - `users/{uid}.role = admin` かつ `isActive = true` のユーザーのみ参照許可
 - 重要な作成・更新はCloud Functions経由に限定
 - クライアントから直接作成可能な範囲は、初期MVPでは最小にする
 
-### 13.2 クライアント直接操作の許可方針
+### 14.2 クライアント直接操作の許可方針
 
 | コレクション | read | create/update/delete |
 |---|---|---|
@@ -417,8 +475,9 @@ Cloud Functions実行結果の簡易ログ。
 | excluded_accounts | adminのみ | Functionsのみ |
 | conversions | adminのみ | Functionsのみ |
 | function_logs | adminのみ | Functionsのみ |
+| candidate_sync_runs | adminのみ | Functionsのみ |
 
-## 14. 未確定事項
+## 15. 未確定事項
 
 - Firestore Rulesを厳密にFunctions専用にするか、一部設定画面だけクライアント更新を許可するか
 - X API DM送信が利用可能な場合の送信失敗リトライ方針

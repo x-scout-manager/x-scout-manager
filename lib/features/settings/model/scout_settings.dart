@@ -1,7 +1,29 @@
+enum TagSearchMode {
+  perTag('per_tag', 'タグごとに検索'),
+  any('any', 'いずれかを含む（OR）'),
+  all('all', 'すべて含む（AND）');
+
+  const TagSearchMode(this.value, this.label);
+
+  final String value;
+  final String label;
+
+  static TagSearchMode fromValue(Object? value) {
+    if (value is! String) {
+      return TagSearchMode.perTag;
+    }
+    return TagSearchMode.values.firstWhere(
+      (mode) => mode.value == value,
+      orElse: () => TagSearchMode.perTag,
+    );
+  }
+}
+
 class ScoutSettings {
   const ScoutSettings({
     required this.tags,
     required this.exclusionKeywords,
+    required this.tagSearchMode,
     required this.searchMaxResults,
     required this.searchMaxPages,
     required this.recentSearchDays,
@@ -12,6 +34,7 @@ class ScoutSettings {
 
   final List<String> tags;
   final List<String> exclusionKeywords;
+  final TagSearchMode tagSearchMode;
   final int searchMaxResults;
   final int searchMaxPages;
   final int recentSearchDays;
@@ -22,6 +45,7 @@ class ScoutSettings {
   static const defaults = ScoutSettings(
     tags: [],
     exclusionKeywords: [],
+    tagSearchMode: TagSearchMode.perTag,
     searchMaxResults: 50,
     searchMaxPages: 1,
     recentSearchDays: 7,
@@ -33,6 +57,7 @@ class ScoutSettings {
   ScoutSettings copyWith({
     List<String>? tags,
     List<String>? exclusionKeywords,
+    TagSearchMode? tagSearchMode,
     int? searchMaxResults,
     int? searchMaxPages,
     int? recentSearchDays,
@@ -43,6 +68,7 @@ class ScoutSettings {
     return ScoutSettings(
       tags: tags ?? this.tags,
       exclusionKeywords: exclusionKeywords ?? this.exclusionKeywords,
+      tagSearchMode: tagSearchMode ?? this.tagSearchMode,
       searchMaxResults: searchMaxResults ?? this.searchMaxResults,
       searchMaxPages: searchMaxPages ?? this.searchMaxPages,
       recentSearchDays: recentSearchDays ?? this.recentSearchDays,
@@ -56,6 +82,7 @@ class ScoutSettings {
     return ScoutSettings(
       tags: _stringList(json['tags']),
       exclusionKeywords: _stringList(json['exclusionKeywords']),
+      tagSearchMode: TagSearchMode.fromValue(json['tagSearchMode']),
       searchMaxResults: _intValue(json['searchMaxResults'], 50),
       searchMaxPages: _intValue(json['searchMaxPages'], 1),
       recentSearchDays: _intValue(json['recentSearchDays'], 7),
@@ -71,6 +98,7 @@ class ScoutSettings {
     return {
       'tags': tags,
       'exclusionKeywords': exclusionKeywords,
+      'tagSearchMode': tagSearchMode.value,
       'searchMaxResults': searchMaxResults,
       'searchMaxPages': searchMaxPages,
       'recentSearchDays': recentSearchDays,

@@ -11,12 +11,14 @@ import '../../features/candidates/data/candidate_repository.dart';
 import '../../features/candidates/data/candidate_functions_repository.dart';
 import '../../features/candidates/data/firestore_candidate_repository.dart';
 import '../../features/candidates/usecase/exclude_candidate.dart';
+import '../../features/candidates/usecase/load_candidate_sync_runs.dart';
 import '../../features/candidates/usecase/load_candidates.dart';
+import '../../features/candidates/usecase/revert_candidate_sync_run.dart';
 import '../../features/candidates/usecase/restore_candidate.dart';
+import '../../features/candidates/usecase/sync_candidates.dart';
 import '../../features/conversions/data/conversion_functions_repository.dart';
 import '../../features/conversions/data/conversion_repository.dart';
 import '../../features/conversions/data/firestore_conversion_repository.dart';
-import '../../features/conversions/usecase/calculate_reward.dart';
 import '../../features/conversions/usecase/create_conversion.dart';
 import '../../features/conversions/usecase/load_conversions.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
@@ -131,6 +133,15 @@ class AppDependencies {
 
   LoadCandidates get loadCandidates => LoadCandidates(candidateRepository);
 
+  LoadCandidateSyncRuns get loadCandidateSyncRuns =>
+      LoadCandidateSyncRuns(candidateRepository);
+
+  SyncCandidates get syncCandidates =>
+      SyncCandidates(candidateFunctionsRepository);
+
+  RevertCandidateSyncRun get revertCandidateSyncRun =>
+      RevertCandidateSyncRun(candidateFunctionsRepository);
+
   ExcludeCandidate get excludeCandidate =>
       ExcludeCandidate(candidateFunctionsRepository);
 
@@ -141,9 +152,6 @@ class AppDependencies {
 
   CreateConversion get createConversion =>
       CreateConversion(conversionFunctionsRepository);
-
-  CalculateReward get calculateReward =>
-      CalculateReward(conversionFunctionsRepository);
 
   LoadSendHistories get loadSendHistories =>
       LoadSendHistories(sendHistoryRepository);

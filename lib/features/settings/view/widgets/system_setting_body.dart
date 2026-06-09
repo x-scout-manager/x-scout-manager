@@ -16,7 +16,6 @@ class _SystemSettingBodyState extends State<SystemSettingBody> {
   late final TextEditingController _searchMaxResultsController;
   late final TextEditingController _searchMaxPagesController;
   late final TextEditingController _recentSearchDaysController;
-  late final TextEditingController _defaultRewardRateController;
   bool _synced = false;
 
   @override
@@ -25,7 +24,6 @@ class _SystemSettingBodyState extends State<SystemSettingBody> {
     _searchMaxResultsController = TextEditingController();
     _searchMaxPagesController = TextEditingController();
     _recentSearchDaysController = TextEditingController();
-    _defaultRewardRateController = TextEditingController();
   }
 
   @override
@@ -33,7 +31,6 @@ class _SystemSettingBodyState extends State<SystemSettingBody> {
     _searchMaxResultsController.dispose();
     _searchMaxPagesController.dispose();
     _recentSearchDaysController.dispose();
-    _defaultRewardRateController.dispose();
     widget.vm.dispose();
     super.dispose();
   }
@@ -46,13 +43,10 @@ class _SystemSettingBodyState extends State<SystemSettingBody> {
     _searchMaxResultsController.text = settings.searchMaxResults.toString();
     _searchMaxPagesController.text = settings.searchMaxPages.toString();
     _recentSearchDaysController.text = settings.recentSearchDays.toString();
-    _defaultRewardRateController.text = settings.defaultRewardRate.toString();
     _synced = true;
   }
 
   int? _intValue(String value) => int.tryParse(value.trim());
-
-  num? _numValue(String value) => num.tryParse(value.trim());
 
   @override
   Widget build(BuildContext context) {
@@ -110,23 +104,9 @@ class _SystemSettingBodyState extends State<SystemSettingBody> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: _defaultRewardRateController,
-                  decoration: const InputDecoration(labelText: '標準成果報酬率'),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (value) {
-                    final parsed = _numValue(value);
-                    if (parsed != null) {
-                      widget.vm.update(defaultRewardRate: parsed);
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('X API DM送信'),
+                  title: const Text('API送信を有効にする'),
                   value: settings.apiDmEnabled,
                   onChanged: state.isSaving
                       ? null
@@ -134,7 +114,7 @@ class _SystemSettingBodyState extends State<SystemSettingBody> {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('手動送信支援'),
+                  title: const Text('手動送信フォールバックを有効にする'),
                   value: settings.manualSendEnabled,
                   onChanged: state.isSaving
                       ? null

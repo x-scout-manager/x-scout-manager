@@ -196,7 +196,7 @@ dm_event_id=取得成功
 - 成功時に `dm_conversation_id` と `dm_event_id` を取得できる
 - ただし、受信側X UIでの着信は未確認
 - 016 API DM送信では、API受理と実着確認を分けて扱う
-- 020 API連携後の成果証跡拡張で `dm_event_id` を保存対象にできる
+- 020 成果記録UIの再設計判断で、必要な場合のみ `dm_event_id` を保存対象にできる
 
 運用注意:
 

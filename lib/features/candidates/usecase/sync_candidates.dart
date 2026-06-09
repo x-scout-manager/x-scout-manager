@@ -5,5 +5,5 @@ class SyncCandidates {
 
   final CandidateFunctionsRepository _repository;
 
-  Future<void> call() => _repository.syncCandidates();
+  Future<SyncCandidatesResult> call() => _repository.syncCandidates();
 }

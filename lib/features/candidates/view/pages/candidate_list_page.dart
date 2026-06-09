@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../app/di/providers.dart';
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/ui/widgets/app_scaffold.dart';
+import '../../../settings/model/scout_settings.dart';
+import '../../model/candidate_sync_run.dart';
 import '../../vm/candidate_list_vm.dart';
 import '../widgets/candidate_table.dart';
 
@@ -18,6 +20,11 @@ class CandidateListPage extends StatelessWidget {
         vm: CandidateListVm(
           dependencies.loadCandidates,
           dependencies.createSendQueue,
+          dependencies.syncCandidates,
+          dependencies.loadCandidateSyncRuns,
+          dependencies.revertCandidateSyncRun,
+          dependencies.loadScoutSettings,
+          dependencies.saveScoutSettings,
         ),
       ),
     );
@@ -42,6 +49,33 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
     Navigator.of(
       context,
     ).pushReplacementNamed(RoutePaths.sendQueue, arguments: queueId);
+  }
+
+  Future<void> _confirmRevert(CandidateSyncRun run) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('抽出を解除しますか'),
+          content: const Text(
+            'この抽出で作成・更新された候補を抽出前の状態へ戻します。送信済み、送信キュー投入済み、後続抽出で更新済みの候補は解除対象からスキップされます。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('解除する'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true) {
+      await widget.vm.revertSyncRun(run.runId);
+    }
   }
 
   @override
@@ -69,6 +103,37 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
                 runSpacing: 12,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
+                  SizedBox(
+                    width: 260,
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'タグ検索モード',
+                        isDense: true,
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<TagSearchMode>(
+                          value: state.settings.tagSearchMode,
+                          isDense: true,
+                          isExpanded: true,
+                          items: TagSearchMode.values
+                              .map(
+                                (mode) => DropdownMenuItem(
+                                  value: mode,
+                                  child: Text(mode.label),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: state.isSavingSearchMode || state.isSyncing
+                              ? null
+                              : (mode) {
+                                  if (mode != null) {
+                                    widget.vm.changeTagSearchMode(mode);
+                                  }
+                                },
+                        ),
+                      ),
+                    ),
+                  ),
                   FilledButton(
                     onPressed: state.isCreatingQueue ? null : _createQueue,
                     child: Text(
@@ -77,7 +142,13 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
                           : '送信キューに追加 (${state.selectedCandidateIds.length})',
                     ),
                   ),
-                  Text('送信可能な候補のみ選択できます。'),
+                  OutlinedButton(
+                    onPressed: state.isSyncing
+                        ? null
+                        : widget.vm.syncCandidates,
+                    child: Text(state.isSyncing ? '抽出中' : 'X API候補抽出'),
+                  ),
+                  const Text('送信可能な候補のみ選択できます。'),
                 ],
               ),
               if (state.errorMessage != null) ...[
@@ -91,6 +162,14 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
                 const SizedBox(height: 16),
                 Text(state.noticeMessage!),
               ],
+              if (state.syncRuns.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                _SyncRunPanel(
+                  runs: state.syncRuns,
+                  isReverting: state.isRevertingSyncRun,
+                  onRevert: _confirmRevert,
+                ),
+              ],
               const SizedBox(height: 24),
               CandidateTable(
                 candidates: state.candidates,
@@ -103,4 +182,73 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
       },
     );
   }
+}
+
+class _SyncRunPanel extends StatelessWidget {
+  const _SyncRunPanel({
+    required this.runs,
+    required this.isReverting,
+    required this.onRevert,
+  });
+
+  final List<CandidateSyncRun> runs;
+  final bool isReverting;
+  final Future<void> Function(CandidateSyncRun run) onRevert;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('最近の候補抽出', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('実行日時')),
+              DataColumn(label: Text('条件')),
+              DataColumn(label: Text('件数')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('操作')),
+            ],
+            rows: runs.map((run) {
+              return DataRow(
+                cells: [
+                  DataCell(Text(_formatDateTime(run.createdAt))),
+                  DataCell(
+                    Text('${run.tagSearchModeLabel} / ${run.tags.join(', ')}'),
+                  ),
+                  DataCell(
+                    Text(
+                      '新規${run.createdCount} 更新${run.updatedCount} 除外${run.excludedCount}',
+                    ),
+                  ),
+                  DataCell(Text(run.statusLabel)),
+                  DataCell(
+                    TextButton(
+                      onPressed: run.canRevert && !isReverting
+                          ? () => onRevert(run)
+                          : null,
+                      child: Text(isReverting ? '解除中' : '解除'),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _formatDateTime(DateTime? value) {
+  if (value == null) {
+    return '-';
+  }
+  final local = value.toLocal();
+  String twoDigits(int number) => number.toString().padLeft(2, '0');
+  return '${local.year}/${twoDigits(local.month)}/${twoDigits(local.day)} '
+      '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
 }

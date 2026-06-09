@@ -561,6 +561,26 @@ MVP判断:
 
 ### DM送信が失敗した場合
 
-MVPは手動送信支援モードで進める。
+API送信を一時停止し、手動送信フォールバックで進める。
 
 この場合でも、投稿検索とユーザー取得が成功していれば、候補抽出は実装できる。
+
+## 12. Cloud Functionsで使うSecret
+
+015の候補抽出Functionは、X API Bearer TokenをFirebase Secret Managerから読む。
+
+Secret名:
+
+```text
+X_BEARER_TOKEN
+```
+
+ローカル検証で使う `.env.x-api.local` はGit管理しない。
+本番Functionsへdeployする前に、Firebase側で同じ値をSecretとして設定する。
+
+```bash
+firebase functions:secrets:set X_BEARER_TOKEN --project x-scout-manager-prod
+```
+
+このコマンドは値の入力を求めるので、X Developer PortalのBearer Tokenを貼り付ける。
+Secret値はチャットやGitHubへ貼らない。
