@@ -69,9 +69,30 @@ class RevertCandidateSyncRunResult {
   }
 }
 
+class CleanupRevertedCandidatesResult {
+  const CleanupRevertedCandidatesResult({
+    required this.restoredCount,
+    required this.deletedCount,
+    required this.skippedCount,
+  });
+
+  final int restoredCount;
+  final int deletedCount;
+  final int skippedCount;
+
+  factory CleanupRevertedCandidatesResult.fromJson(Map<Object?, Object?> json) {
+    return CleanupRevertedCandidatesResult(
+      restoredCount: SyncCandidatesResult._intValue(json['restoredCount']),
+      deletedCount: SyncCandidatesResult._intValue(json['deletedCount']),
+      skippedCount: SyncCandidatesResult._intValue(json['skippedCount']),
+    );
+  }
+}
+
 abstract interface class CandidateFunctionsRepository {
   Future<SyncCandidatesResult> syncCandidates();
   Future<RevertCandidateSyncRunResult> revertCandidateSyncRun(String runId);
+  Future<CleanupRevertedCandidatesResult> cleanupRevertedCandidates();
   Future<void> excludeCandidate({required String candidateId, String? reason});
   Future<void> restoreCandidate(String candidateId);
 }
@@ -105,6 +126,17 @@ class FirebaseCandidateFunctionsRepository
         'runId': runId,
       });
       return RevertCandidateSyncRunResult.fromJson(result.data);
+    } catch (error) {
+      throw FunctionsErrorMapper.map(error);
+    }
+  }
+
+  @override
+  Future<CleanupRevertedCandidatesResult> cleanupRevertedCandidates() async {
+    try {
+      final callable = _functions.httpsCallable('cleanupRevertedCandidates');
+      final result = await callable.call<Map<Object?, Object?>>({});
+      return CleanupRevertedCandidatesResult.fromJson(result.data);
     } catch (error) {
       throw FunctionsErrorMapper.map(error);
     }

@@ -1,6 +1,9 @@
 export {healthCheck, adminHealthCheck} from "./app";
 export {syncCandidates} from "./candidates/sync_candidates";
 export {revertCandidateSyncRun} from "./candidates/revert_candidate_sync_run";
+export {
+  cleanupRevertedCandidates,
+} from "./candidates/cleanup_reverted_candidates";
 export {createSendQueue} from "./send_queue/create_send_queue";
 export {deleteSendQueue} from "./send_queue/delete_send_queue";
 export {sendDirectMessage} from "./send_queue/send_direct_message";

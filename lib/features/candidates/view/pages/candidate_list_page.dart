@@ -23,6 +23,7 @@ class CandidateListPage extends StatelessWidget {
           dependencies.syncCandidates,
           dependencies.loadCandidateSyncRuns,
           dependencies.revertCandidateSyncRun,
+          dependencies.cleanupRevertedCandidates,
           dependencies.loadScoutSettings,
           dependencies.saveScoutSettings,
         ),
@@ -75,6 +76,33 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
     );
     if (confirmed == true) {
       await widget.vm.revertSyncRun(run.runId);
+    }
+  }
+
+  Future<void> _confirmCleanupRevertedCandidates() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('解除済み候補を再掃除しますか'),
+          content: const Text(
+            'すべての抽出元が解除済みの未送信候補を再確認し、抽出前の状態へ戻します。送信履歴や有効な送信キューに紐づく候補はスキップされます。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('再掃除する'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true) {
+      await widget.vm.cleanupRevertedCandidates();
     }
   }
 
@@ -167,7 +195,9 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
                 _SyncRunPanel(
                   runs: state.syncRuns,
                   isReverting: state.isRevertingSyncRun,
+                  isCleaning: state.isCleaningRevertedCandidates,
                   onRevert: _confirmRevert,
+                  onCleanup: _confirmCleanupRevertedCandidates,
                 ),
               ],
               const SizedBox(height: 24),
@@ -188,19 +218,34 @@ class _SyncRunPanel extends StatelessWidget {
   const _SyncRunPanel({
     required this.runs,
     required this.isReverting,
+    required this.isCleaning,
     required this.onRevert,
+    required this.onCleanup,
   });
 
   final List<CandidateSyncRun> runs;
   final bool isReverting;
+  final bool isCleaning;
   final Future<void> Function(CandidateSyncRun run) onRevert;
+  final VoidCallback onCleanup;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('最近の候補抽出', style: Theme.of(context).textTheme.titleMedium),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text('最近の候補抽出', style: Theme.of(context).textTheme.titleMedium),
+            OutlinedButton(
+              onPressed: isReverting || isCleaning ? null : onCleanup,
+              child: Text(isCleaning ? '再掃除中' : '解除済み候補を再掃除'),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

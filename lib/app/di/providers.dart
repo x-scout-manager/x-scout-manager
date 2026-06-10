@@ -10,6 +10,7 @@ import '../../features/auth/usecase/sign_out.dart';
 import '../../features/candidates/data/candidate_repository.dart';
 import '../../features/candidates/data/candidate_functions_repository.dart';
 import '../../features/candidates/data/firestore_candidate_repository.dart';
+import '../../features/candidates/usecase/cleanup_reverted_candidates.dart';
 import '../../features/candidates/usecase/exclude_candidate.dart';
 import '../../features/candidates/usecase/load_candidate_sync_runs.dart';
 import '../../features/candidates/usecase/load_candidates.dart';
@@ -146,6 +147,9 @@ class AppDependencies {
 
   RevertCandidateSyncRun get revertCandidateSyncRun =>
       RevertCandidateSyncRun(candidateFunctionsRepository);
+
+  CleanupRevertedCandidates get cleanupRevertedCandidates =>
+      CleanupRevertedCandidates(candidateFunctionsRepository);
 
   ExcludeCandidate get excludeCandidate =>
       ExcludeCandidate(candidateFunctionsRepository);

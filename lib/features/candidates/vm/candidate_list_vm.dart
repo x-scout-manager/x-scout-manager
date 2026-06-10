@@ -8,6 +8,7 @@ import '../../settings/usecase/load_scout_settings.dart';
 import '../../settings/usecase/save_scout_settings.dart';
 import '../model/candidate.dart';
 import '../model/candidate_sync_run.dart';
+import '../usecase/cleanup_reverted_candidates.dart';
 import '../usecase/load_candidate_sync_runs.dart';
 import '../usecase/revert_candidate_sync_run.dart';
 import '../usecase/load_candidates.dart';
@@ -22,6 +23,7 @@ class CandidateListState {
     this.isCreatingQueue = false,
     this.isSyncing = false,
     this.isRevertingSyncRun = false,
+    this.isCleaningRevertedCandidates = false,
     this.isSavingSearchMode = false,
     this.settings = ScoutSettings.defaults,
     this.syncRuns = const [],
@@ -35,6 +37,7 @@ class CandidateListState {
   final bool isCreatingQueue;
   final bool isSyncing;
   final bool isRevertingSyncRun;
+  final bool isCleaningRevertedCandidates;
   final bool isSavingSearchMode;
   final ScoutSettings settings;
   final List<CandidateSyncRun> syncRuns;
@@ -48,6 +51,7 @@ class CandidateListState {
     bool? isCreatingQueue,
     bool? isSyncing,
     bool? isRevertingSyncRun,
+    bool? isCleaningRevertedCandidates,
     bool? isSavingSearchMode,
     ScoutSettings? settings,
     List<CandidateSyncRun>? syncRuns,
@@ -63,6 +67,8 @@ class CandidateListState {
       isCreatingQueue: isCreatingQueue ?? this.isCreatingQueue,
       isSyncing: isSyncing ?? this.isSyncing,
       isRevertingSyncRun: isRevertingSyncRun ?? this.isRevertingSyncRun,
+      isCleaningRevertedCandidates:
+          isCleaningRevertedCandidates ?? this.isCleaningRevertedCandidates,
       isSavingSearchMode: isSavingSearchMode ?? this.isSavingSearchMode,
       settings: settings ?? this.settings,
       syncRuns: syncRuns ?? this.syncRuns,
@@ -83,6 +89,7 @@ class CandidateListVm extends ChangeNotifier {
     this._syncCandidates,
     this._loadCandidateSyncRuns,
     this._revertCandidateSyncRun,
+    this._cleanupRevertedCandidates,
     this._loadScoutSettings,
     this._saveScoutSettings,
   ) {
@@ -139,6 +146,7 @@ class CandidateListVm extends ChangeNotifier {
   final SyncCandidates _syncCandidates;
   final LoadCandidateSyncRuns _loadCandidateSyncRuns;
   final RevertCandidateSyncRun _revertCandidateSyncRun;
+  final CleanupRevertedCandidates _cleanupRevertedCandidates;
   final LoadScoutSettings _loadScoutSettings;
   final SaveScoutSettings _saveScoutSettings;
   late final StreamSubscription _candidateSubscription;
@@ -267,6 +275,41 @@ class CandidateListVm extends ChangeNotifier {
       _state = _state.copyWith(
         isRevertingSyncRun: false,
         errorMessage: '抽出解除に失敗しました。',
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<void> cleanupRevertedCandidates() async {
+    if (_state.isCleaningRevertedCandidates) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      isCleaningRevertedCandidates: true,
+      clearErrorMessage: true,
+      clearNoticeMessage: true,
+    );
+    notifyListeners();
+
+    try {
+      final result = await _cleanupRevertedCandidates();
+      _state = _state.copyWith(
+        isCleaningRevertedCandidates: false,
+        noticeMessage:
+            '解除済み候補を再掃除しました。復元${result.restoredCount}件、削除${result.deletedCount}件、スキップ${result.skippedCount}件。',
+      );
+      notifyListeners();
+    } on AppError catch (error) {
+      _state = _state.copyWith(
+        isCleaningRevertedCandidates: false,
+        errorMessage: error.message,
+      );
+      notifyListeners();
+    } catch (_) {
+      _state = _state.copyWith(
+        isCleaningRevertedCandidates: false,
+        errorMessage: '解除済み候補の再掃除に失敗しました。',
       );
       notifyListeners();
     }

@@ -187,6 +187,15 @@ class _FakeCandidateFunctionsRepository
       skippedCount: 0,
     );
   }
+
+  @override
+  Future<CleanupRevertedCandidatesResult> cleanupRevertedCandidates() async {
+    return const CleanupRevertedCandidatesResult(
+      restoredCount: 0,
+      deletedCount: 0,
+      skippedCount: 0,
+    );
+  }
 }
 
 class _FakeConversionRepository implements ConversionRepository {
