@@ -71,11 +71,63 @@ class _DashboardBodyState extends State<_DashboardBody> {
                 const LinearProgressIndicator(),
                 const SizedBox(height: 16),
               ],
+              const _DashboardHeader(),
+              const SizedBox(height: 18),
               SummaryTiles(summary: summary),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF23265F), Color(0xFF5B5FEF), Color(0xFF19B8D8)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5B5FEF).withValues(alpha: 0.16),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Creator Scout Operations',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: const Color(0xFFDDE8FF),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '配信者候補の発掘から送信管理までを一元管理',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

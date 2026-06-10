@@ -20,7 +20,16 @@ class AppScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title), actions: actions),
       drawer: _AppNavigationDrawer(currentRoute: currentRoute),
-      body: body,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFBFCFF), Color(0xFFF4F0FF), Color(0xFFEEF8FF)],
+          ),
+        ),
+        child: body,
+      ),
     );
   }
 }
@@ -37,9 +46,41 @@ class _AppNavigationDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text('X Scout Manager'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF2B2F7D),
+                      Color(0xFF5B5FEF),
+                      Color(0xFF25C2E5),
+                    ],
+                  ),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'X Scout Manager',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Creator Scout Operations',
+                      style: TextStyle(color: Color(0xFFDDE8FF), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const Divider(),
             _NavigationItem(
