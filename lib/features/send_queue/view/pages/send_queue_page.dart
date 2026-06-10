@@ -61,22 +61,58 @@ class _SendQueueListBodyState extends State<_SendQueueListBody> {
         if (state.errorMessage != null) {
           return Center(child: Text(state.errorMessage!));
         }
-        if (state.queues.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('送信キューはまだありません。候補一覧から作成してください。'),
-          );
-        }
 
         return ListView.separated(
           padding: const EdgeInsets.all(24),
-          itemCount: state.queues.length,
+          itemCount: state.queues.length + 1,
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            return _SendQueueCard(queue: state.queues[index]);
+            if (index == 0) {
+              return _SendQueueListHeader(
+                state: state,
+                onShowCompletedChanged: _vm.setShowCompletedQueues,
+              );
+            }
+            return _SendQueueCard(queue: state.queues[index - 1]);
           },
         );
       },
+    );
+  }
+}
+
+class _SendQueueListHeader extends StatelessWidget {
+  const _SendQueueListHeader({
+    required this.state,
+    required this.onShowCompletedChanged,
+  });
+
+  final SendQueueListState state;
+  final ValueChanged<bool> onShowCompletedChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final emptyMessage = state.hasHiddenCompletedQueues
+        ? '未完了の送信キューはありません。完了済みを確認する場合は表示を切り替えてください。'
+        : '送信キューはまだありません。候補一覧から作成してください。';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('完了したキューも表示'),
+            value: state.showCompletedQueues,
+            onChanged: onShowCompletedChanged,
+          ),
+        ),
+        if (state.queues.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(emptyMessage),
+          ),
+      ],
     );
   }
 }

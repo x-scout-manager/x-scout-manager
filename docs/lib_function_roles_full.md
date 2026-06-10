@@ -25,7 +25,7 @@
 | `lib/features/auth/**` | ログイン、セッション、ユーザー取得のfeature構成 |
 | `lib/features/dashboard/**` | 候補数・送信済み数・除外数など概要表示のfeature構成 |
 | `lib/features/candidates/**` | 候補一覧、候補詳細、候補抽出、抽出履歴/解除、タグ検索モード切替、除外/復元のfeature構成 |
-| `lib/features/send_queue/**` | 送信キュー作成、個別DM送信、手動送信済み登録、送信キュー論理削除、スキップのfeature構成 |
+| `lib/features/send_queue/**` | 送信キュー作成、完了キュー表示切替、個別DM送信、手動送信済み登録、送信キュー論理削除、スキップのfeature構成 |
 | `lib/features/templates/**` | DMテンプレート一覧・保存・論理削除のfeature構成 |
 | `lib/features/histories/**` | 送信履歴表示のfeature構成 |
 | `lib/features/exclusions/**` | 除外アカウント、除外キーワード設定のfeature構成 |
