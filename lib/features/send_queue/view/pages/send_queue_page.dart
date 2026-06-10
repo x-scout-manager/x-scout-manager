@@ -166,7 +166,10 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
       loadSendQueue: dependencies.loadSendQueue,
       loadSendQueueItems: dependencies.loadSendQueueItems,
       loadTemplates: dependencies.loadTemplates,
+      loadScoutSettings: dependencies.loadScoutSettings,
+      deleteSendQueue: dependencies.deleteSendQueue,
       markAsManuallySent: dependencies.markAsManuallySent,
+      sendDirectMessage: dependencies.sendDirectMessage,
     );
   }
 
@@ -196,6 +199,73 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
     ).showSnackBar(const SnackBar(content: Text('送信履歴に登録しました。')));
   }
 
+  Future<void> _sendByApi(String username) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('X APIでDM送信'),
+          content: Text('@$username へDMを1件送信します。送信後は送信履歴に保存されます。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('送信'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    final succeeded = await _vm.sendSelectedByApi();
+    if (!mounted || !succeeded) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('X APIでDMを送信しました。')));
+  }
+
+  Future<void> _deleteQueue() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('送信キューを削除'),
+          content: const Text('この送信キューを一覧から削除します。送信履歴と候補データは削除されません。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('削除'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    final succeeded = await _vm.deleteQueue();
+    if (!mounted || !succeeded) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('送信キューを削除しました。')));
+    Navigator.of(context).pushReplacementNamed(RoutePaths.sendQueue);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -206,6 +276,7 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
         final selectedItem = state.selectedItem;
         final selectedTemplate = state.selectedTemplate;
         final messageBody = state.messageBody;
+        final messagePreview = state.messagePreview;
 
         if (state.isLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -225,7 +296,17 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(queue.name ?? '送信キュー'),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(queue.name ?? '送信キュー')),
+                    OutlinedButton.icon(
+                      onPressed: state.isProcessing ? null : _deleteQueue,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('キュー削除'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Text('キューID: ${queue.queueId}'),
                 const SizedBox(height: 16),
@@ -267,9 +348,7 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
                         },
                 ),
                 const SizedBox(height: 24),
-                MessagePreview(
-                  message: messageBody.isEmpty ? 'DM本文は未選択です' : messageBody,
-                ),
+                MessagePreview(message: messagePreview),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 12,
@@ -285,6 +364,18 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
                     FilledButton.icon(
                       onPressed:
                           state.isProcessing ||
+                              !state.settings.apiDmEnabled ||
+                              selectedItem == null ||
+                              selectedTemplate == null ||
+                              messageBody.isEmpty
+                          ? null
+                          : () => _sendByApi(selectedItem.username),
+                      icon: const Icon(Icons.send_outlined),
+                      label: Text(state.isProcessing ? '送信中' : 'APIでDM送信'),
+                    ),
+                    FilledButton.icon(
+                      onPressed:
+                          state.isProcessing ||
                               selectedItem == null ||
                               selectedTemplate == null ||
                               messageBody.isEmpty
@@ -295,6 +386,10 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
                     ),
                   ],
                 ),
+                if (!state.settings.apiDmEnabled) ...[
+                  const SizedBox(height: 12),
+                  const Text('X API DM送信はシステム設定で無効です。'),
+                ],
                 if (state.errorMessage != null) ...[
                   const SizedBox(height: 16),
                   Text(
@@ -330,20 +425,24 @@ class _QueueItemSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pendingItems = items.where((item) => item.isPending).toList();
-    if (pendingItems.isEmpty) {
+    final sendableItems = items.where((item) => item.isSendable).toList();
+    if (sendableItems.isEmpty) {
       return const Text('未送信の候補はありません。');
     }
 
     return DropdownButtonFormField<String>(
-      key: ValueKey('item-$selectedItemId-${pendingItems.length}'),
+      key: ValueKey('item-$selectedItemId-${sendableItems.length}'),
       initialValue: selectedItemId,
       decoration: const InputDecoration(labelText: '送信対象'),
-      items: pendingItems
+      items: sendableItems
           .map(
             (item) => DropdownMenuItem(
               value: item.itemId,
-              child: Text('@${item.username}'),
+              child: Text(
+                item.status == 'failed'
+                    ? '@${item.username}（失敗）'
+                    : '@${item.username}',
+              ),
             ),
           )
           .toList(),

@@ -5,7 +5,13 @@ import '../../../core/errors/functions_error_mapper.dart';
 
 abstract interface class SendQueueFunctionsRepository {
   Future<String> createSendQueue(List<String> candidateIds);
-  Future<void> sendDirectMessage(String queueId, String itemId);
+  Future<void> deleteSendQueue(String queueId);
+  Future<void> sendDirectMessage({
+    required String queueId,
+    required String itemId,
+    required String templateId,
+    required String messageBody,
+  });
   Future<void> markAsManuallySent({
     required String queueId,
     required String itemId,
@@ -42,6 +48,16 @@ class FirebaseSendQueueFunctionsRepository
   }
 
   @override
+  Future<void> deleteSendQueue(String queueId) async {
+    try {
+      final callable = _functions.httpsCallable('deleteSendQueue');
+      await callable.call<Map<String, dynamic>>({'queueId': queueId});
+    } catch (error) {
+      throw FunctionsErrorMapper.map(error);
+    }
+  }
+
+  @override
   Future<void> markAsManuallySent({
     required String queueId,
     required String itemId,
@@ -62,5 +78,22 @@ class FirebaseSendQueueFunctionsRepository
   }
 
   @override
-  Future<void> sendDirectMessage(String queueId, String itemId) async {}
+  Future<void> sendDirectMessage({
+    required String queueId,
+    required String itemId,
+    required String templateId,
+    required String messageBody,
+  }) async {
+    try {
+      final callable = _functions.httpsCallable('sendDirectMessage');
+      await callable.call<Map<String, dynamic>>({
+        'queueId': queueId,
+        'itemId': itemId,
+        'templateId': templateId,
+        'messageBody': messageBody,
+      });
+    } catch (error) {
+      throw FunctionsErrorMapper.map(error);
+    }
+  }
 }

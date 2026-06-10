@@ -30,6 +30,7 @@ class FirestoreSendQueueRepository implements SendQueueRepository {
     ) {
       return snapshot.docs
           .map((doc) => SendQueue.fromJson(doc.id, doc.data()))
+          .where((queue) => !queue.isDeleted)
           .toList();
     });
   }

@@ -68,7 +68,7 @@ export const markAsManuallySent = onCall(async (request) => {
       );
     }
 
-    if (item.status !== "pending") {
+    if (item.status !== "pending" && item.status !== "failed") {
       throw new HttpsError(
         "failed-precondition",
         "この候補は送信済み、または送信対象外です。",
@@ -119,7 +119,10 @@ export const markAsManuallySent = onCall(async (request) => {
     const failedCount = numberValue(queue.failedCount);
     const totalCount = numberValue(queue.totalCount);
     const nextCompletedCount = completedCount + 1;
-    const queueStatus = nextCompletedCount + failedCount >= totalCount ?
+    const nextFailedCount = item.status === "failed" ?
+      Math.max(0, failedCount - 1) :
+      failedCount;
+    const queueStatus = nextCompletedCount + nextFailedCount >= totalCount ?
       "completed" :
       "active";
 
@@ -158,6 +161,7 @@ export const markAsManuallySent = onCall(async (request) => {
 
     transaction.update(queueRef, {
       completedCount: nextCompletedCount,
+      failedCount: nextFailedCount,
       currentIndex: Math.min(numberValue(item.order) + 1, totalCount),
       status: queueStatus,
       updatedAt: now,

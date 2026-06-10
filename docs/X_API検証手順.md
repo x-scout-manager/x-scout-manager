@@ -348,14 +348,16 @@ node tools/x_api_probe.mjs token "abc123xyz" "def456verifier"
 
 1. `access_token` の値をコピー
 2. `.env.x-api.local` の `X_USER_ACCESS_TOKEN=` に貼る
+3. `refresh_token` の値を `.env.x-api.local` の `X_USER_REFRESH_TOKEN=` に貼る
 
 例:
 
 ```env
 X_USER_ACCESS_TOKEN=ここにaccess_token
+X_USER_REFRESH_TOKEN=ここにrefresh_token
 ```
 
-`refresh_token` が出た場合は、後で必要になるので安全な場所にメモする。
+`access_token` は期限切れするため、Cloud Functions本番運用では `refresh_token` もSecret Managerへ設定する。
 
 ### `authorization code was invalid` が出る場合
 

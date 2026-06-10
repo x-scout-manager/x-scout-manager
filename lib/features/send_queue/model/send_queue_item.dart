@@ -24,6 +24,7 @@ class SendQueueItem {
   final String? sendHistoryId;
 
   bool get isPending => status == 'pending';
+  bool get isSendable => status == 'pending' || status == 'failed';
 
   factory SendQueueItem.fromJson(String itemId, Map<String, dynamic> json) {
     return SendQueueItem(

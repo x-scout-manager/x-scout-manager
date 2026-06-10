@@ -5,7 +5,17 @@ class SendDirectMessage {
 
   final SendQueueFunctionsRepository _repository;
 
-  Future<void> call(String queueId, String itemId) {
-    return _repository.sendDirectMessage(queueId, itemId);
+  Future<void> call({
+    required String queueId,
+    required String itemId,
+    required String templateId,
+    required String messageBody,
+  }) {
+    return _repository.sendDirectMessage(
+      queueId: queueId,
+      itemId: itemId,
+      templateId: templateId,
+      messageBody: messageBody,
+    );
   }
 }

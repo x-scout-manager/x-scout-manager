@@ -40,10 +40,12 @@ import '../../features/send_queue/data/send_queue_functions_repository.dart';
 import '../../features/send_queue/data/firestore_send_queue_repository.dart';
 import '../../features/send_queue/data/send_queue_repository.dart';
 import '../../features/send_queue/usecase/create_send_queue.dart';
+import '../../features/send_queue/usecase/delete_send_queue.dart';
 import '../../features/send_queue/usecase/load_send_queue.dart';
 import '../../features/send_queue/usecase/load_send_queue_items.dart';
 import '../../features/send_queue/usecase/load_send_queues.dart';
 import '../../features/send_queue/usecase/mark_as_manually_sent.dart';
+import '../../features/send_queue/usecase/send_direct_message.dart';
 import '../../features/templates/data/firestore_template_repository.dart';
 import '../../features/templates/data/template_repository.dart';
 import '../../features/templates/usecase/load_templates.dart';
@@ -159,6 +161,9 @@ class AppDependencies {
   CreateSendQueue get createSendQueue =>
       CreateSendQueue(sendQueueFunctionsRepository);
 
+  DeleteSendQueue get deleteSendQueue =>
+      DeleteSendQueue(sendQueueFunctionsRepository);
+
   LoadSendQueue get loadSendQueue => LoadSendQueue(sendQueueRepository);
 
   LoadSendQueues get loadSendQueues => LoadSendQueues(sendQueueRepository);
@@ -168,6 +173,9 @@ class AppDependencies {
 
   MarkAsManuallySent get markAsManuallySent =>
       MarkAsManuallySent(sendQueueFunctionsRepository);
+
+  SendDirectMessage get sendDirectMessage =>
+      SendDirectMessage(sendQueueFunctionsRepository);
 }
 
 class AppProviders extends InheritedWidget {

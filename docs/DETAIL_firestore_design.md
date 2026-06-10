@@ -471,6 +471,7 @@ X API候補抽出の実行単位と、解除用の差分を保存する。
 | templates | adminのみ | adminのみ |
 | candidates | adminのみ | 原則Functionsのみ |
 | send_queues | adminのみ | createはFunctionsのみ |
+| send_queues/items | adminのみ | Functionsのみ |
 | send_histories | adminのみ | Functionsのみ |
 | excluded_accounts | adminのみ | Functionsのみ |
 | conversions | adminのみ | Functionsのみ |

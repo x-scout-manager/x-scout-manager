@@ -36,6 +36,11 @@ service cloud.firestore {
       allow read: if isActiveAdmin();
       allow write: if false;
 
+      match /items/{itemId} {
+        allow read: if isActiveAdmin();
+        allow write: if false;
+      }
+
       match /changes/{changeId} {
         allow read: if isActiveAdmin();
         allow write: if false;

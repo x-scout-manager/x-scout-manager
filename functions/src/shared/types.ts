@@ -74,6 +74,7 @@ export type SendHistoryData = {
 };
 
 export type SendQueueData = {
+  status?: string;
   totalCount?: number;
   completedCount?: number;
   failedCount?: number;
@@ -100,6 +101,7 @@ export type ScoutSettingsData = {
   searchMaxResults?: unknown;
   searchMaxPages?: unknown;
   recentSearchDays?: unknown;
+  apiDmEnabled?: boolean;
 };
 
 export type SyncRunItemAction =

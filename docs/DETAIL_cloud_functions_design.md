@@ -224,7 +224,7 @@ functions/src/
 - `candidateIds` は1件以上
 - 初期MVPでは一度に最大100件まで
 
-## 6. sendDirectMessage
+## 7. sendDirectMessage
 
 ### 概要
 
@@ -245,6 +245,7 @@ X APIで1候補者にDMを送信する。確認なし一括送信には使用し
 |---|---|---|
 | historyId | string | 送信履歴ID |
 | xDmEventId | string | X API側イベントID |
+| xDmConversationId | string | X API側会話ID |
 
 ### 処理
 
@@ -257,7 +258,7 @@ X APIで1候補者にDMを送信する。確認なし一括送信には使用し
    - item.status が `sent / excluded / sending`
    - `send_histories` に同一 `xUserId` の履歴あり
    - `excluded_accounts/{xUserId}` が存在
-6. candidate.status と item.status を `sending` に更新
+6. item.status を `sending` に更新
 7. transaction終了
 8. X APIでDM送信
 9. 成功時transaction
@@ -268,16 +269,60 @@ X APIで1候補者にDMを送信する。確認なし一括送信には使用し
    - `send_queues/items.status = sent`
    - `send_queues.completedCount` increment
 10. 失敗時transaction
-   - `candidates.status = failed`
    - `send_queues/items.status = failed`
-   - `errorCode / errorMessage` 保存
+   - `apiSendError` 保存
    - `send_queues.failedCount` increment
+
+失敗したqueue itemは手動送信済み登録の対象に戻せる。
+
+### Secret
+
+X API DM送信ではSecret Managerの以下を利用する。
+
+| Secret | 内容 |
+|---|---|
+| X_USER_ACCESS_TOKEN | 送信者XアカウントのOAuth2アクセストークン |
+| X_USER_REFRESH_TOKEN | 送信者XアカウントのOAuth2 refresh token |
+| X_CLIENT_ID | X Developer AppのOAuth2 Client ID |
+| X_CLIENT_SECRET | X Developer AppのOAuth2 Client Secret |
+
+アクセストークンが期限切れで401になった場合は、refresh tokenでアクセストークンを再取得して1回だけDM送信を再試行する。
 
 ### 重要
 
 X API呼び出しはtransaction外で行う。transaction内では送信ロックのみ行う。
 
-## 7. markAsManuallySent
+## 8. deleteSendQueue
+
+### 概要
+
+送信キューを一覧から非表示にするため、論理削除する。
+送信履歴、候補、送信キュー明細は削除しない。
+
+### input
+
+| フィールド | 型 | 必須 | 内容 |
+|---|---|---|---|
+| queueId | string | ○ | キューID |
+
+### output
+
+| フィールド | 型 | 内容 |
+|---|---|---|
+| queueId | string | 削除対象キューID |
+
+### 処理
+
+1. 管理者権限を確認
+2. `send_queues/{queueId}` を取得
+3. 存在しない場合はエラー
+4. `status = deleted`、`deletedAt`、`deletedBy`、`updatedAt` を保存
+
+### 重要
+
+送信履歴の参照整合性を維持するため、物理削除は行わない。
+
+## 9. markAsManuallySent
 
 ### 概要
 
@@ -311,7 +356,7 @@ X API呼び出しはtransaction外で行う。transaction内では送信ロッ�
 9. queueの `completedCount` を更新
 10. transaction終了
 
-## 8. excludeCandidate
+## 10. excludeCandidate
 
 ### input
 
@@ -328,7 +373,7 @@ X API呼び出しはtransaction外で行う。transaction内では送信ロッ�
 4. candidateを `status = excluded`、`isExcluded = true` に更新
 5. 未送信queue itemがあれば `excluded` に更新
 
-## 9. restoreCandidate
+## 11. restoreCandidate
 
 ### input
 
@@ -344,7 +389,7 @@ X API呼び出しはtransaction外で行う。transaction内では送信ロッ�
 4. 既送信履歴がなければ candidateを `candidate`、`isExcluded = false` に戻す
 5. 既送信履歴がある場合は `sent` を維持する
 
-## 10. createConversion
+## 12. createConversion
 
 ### input
 
@@ -370,7 +415,7 @@ X API呼び出しはtransaction外で行う。transaction内では送信ロッ�
 5. `conversions` 作成
 6. 成果報酬率・成果報酬額は保存しない。算定はクライアント側で別途行う
 
-## 11. skipQueueItem
+## 13. skipQueueItem
 
 基本設計では未定義だが、UI操作としてスキップが存在するためMVPで実装対象とする。
 
@@ -387,7 +432,7 @@ X API呼び出しはtransaction外で行う。transaction内では送信ロッ�
 2. item.status が `pending / failed` の場合のみ `skipped` に更新
 3. `send_queues.skippedCount` を更新
 
-## 13. 実装順序
+## 14. 実装順序
 
 1. 共通認証ヘルパー
 2. settings / users 初期読み取り

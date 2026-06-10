@@ -28,12 +28,14 @@ class SendQueue {
   final String? createdBy;
 
   bool get isActive => status == 'active';
+  bool get isDeleted => status == 'deleted';
 
   String get statusLabel {
     return switch (status) {
       'active' => '進行中',
       'completed' => '完了',
       'canceled' => 'キャンセル',
+      'deleted' => '削除済み',
       _ => status,
     };
   }

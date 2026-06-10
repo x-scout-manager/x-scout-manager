@@ -213,6 +213,9 @@ class _FakeSendQueueFunctionsRepository
   }
 
   @override
+  Future<void> deleteSendQueue(String queueId) async {}
+
+  @override
   Future<void> markAsManuallySent({
     required String queueId,
     required String itemId,
@@ -221,7 +224,12 @@ class _FakeSendQueueFunctionsRepository
   }) async {}
 
   @override
-  Future<void> sendDirectMessage(String queueId, String itemId) async {}
+  Future<void> sendDirectMessage({
+    required String queueId,
+    required String itemId,
+    required String templateId,
+    required String messageBody,
+  }) async {}
 }
 
 class _FakeSendQueueRepository implements SendQueueRepository {
