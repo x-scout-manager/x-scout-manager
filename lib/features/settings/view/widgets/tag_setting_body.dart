@@ -24,7 +24,6 @@ class _TagSettingBodyState extends State<TagSettingBody> {
   @override
   void dispose() {
     _controller.dispose();
-    widget.vm.dispose();
     super.dispose();
   }
 

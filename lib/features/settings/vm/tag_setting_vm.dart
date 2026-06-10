@@ -21,17 +21,34 @@ class TagSettingState {
   final bool isSaving;
   final String? errorMessage;
   final String? noticeMessage;
+
+  TagSettingState copyWith({
+    List<TagSetting>? tags,
+    bool? isLoading,
+    bool? isSaving,
+    String? errorMessage,
+    String? noticeMessage,
+  }) {
+    return TagSettingState(
+      tags: tags ?? this.tags,
+      isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
+      errorMessage: errorMessage,
+      noticeMessage: noticeMessage,
+    );
+  }
 }
 
 class TagSettingVm extends ChangeNotifier {
   TagSettingVm(this._loadScoutSettings, this._saveTags) {
     _subscription = _loadScoutSettings().listen(
       (settings) {
-        _state = TagSettingState(
+        _state = _state.copyWith(
           tags: (settings?.tags ?? const [])
               .map((tag) => TagSetting(tag: tag, isActive: true))
               .toList(),
           isLoading: false,
+          isSaving: false,
         );
         notifyListeners();
       },
@@ -57,57 +74,62 @@ class TagSettingVm extends ChangeNotifier {
     final normalized = _normalizeTag(value);
     final validation = _validateNewTag(normalized);
     if (validation != null) {
-      _state = TagSettingState(
-        tags: _state.tags,
-        isLoading: _state.isLoading,
-        isSaving: _state.isSaving,
-        errorMessage: validation,
-      );
+      _state = _state.copyWith(errorMessage: validation);
       notifyListeners();
       return;
     }
 
-    _state = TagSettingState(
+    _state = _state.copyWith(
       tags: [
         ..._state.tags,
         TagSetting(tag: normalized, isActive: true),
       ],
-      isLoading: _state.isLoading,
+      isSaving: false,
     );
     notifyListeners();
   }
 
   void removeTag(String tag) {
-    _state = TagSettingState(
+    _state = _state.copyWith(
       tags: _state.tags.where((item) => item.tag != tag).toList(),
-      isLoading: _state.isLoading,
+      isSaving: false,
     );
     notifyListeners();
   }
 
   Future<void> save() async {
     if (_state.tags.isEmpty) {
-      _state = TagSettingState(
-        tags: _state.tags,
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
         errorMessage: 'タグを1件以上登録してください。',
       );
       notifyListeners();
       return;
     }
 
-    _state = TagSettingState(tags: _state.tags, isSaving: true);
+    _state = _state.copyWith(isLoading: false, isSaving: true);
     notifyListeners();
 
     try {
       await _saveTags(_state.tags);
-      _state = TagSettingState(tags: _state.tags, noticeMessage: '保存しました。');
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
+        noticeMessage: '保存しました。',
+      );
       notifyListeners();
     } on AppError catch (error) {
-      _state = TagSettingState(tags: _state.tags, errorMessage: error.message);
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
+        errorMessage: error.message,
+      );
       notifyListeners();
     } catch (_) {
-      _state = TagSettingState(
-        tags: _state.tags,
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
         errorMessage: 'タグ設定の保存に失敗しました。',
       );
       notifyListeners();

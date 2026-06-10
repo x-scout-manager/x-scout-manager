@@ -20,13 +20,33 @@ class ExclusionKeywordState {
   final bool isSaving;
   final String? errorMessage;
   final String? noticeMessage;
+
+  ExclusionKeywordState copyWith({
+    List<ExclusionKeyword>? keywords,
+    bool? isLoading,
+    bool? isSaving,
+    String? errorMessage,
+    String? noticeMessage,
+  }) {
+    return ExclusionKeywordState(
+      keywords: keywords ?? this.keywords,
+      isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
+      errorMessage: errorMessage,
+      noticeMessage: noticeMessage,
+    );
+  }
 }
 
 class ExclusionKeywordVm extends ChangeNotifier {
   ExclusionKeywordVm(this._repository, this._saveExclusionKeywords) {
     _subscription = _repository.watchKeywords().listen(
       (keywords) {
-        _state = ExclusionKeywordState(keywords: keywords, isLoading: false);
+        _state = _state.copyWith(
+          keywords: keywords,
+          isLoading: false,
+          isSaving: false,
+        );
         notifyListeners();
       },
       onError: (_) {
@@ -51,50 +71,47 @@ class ExclusionKeywordVm extends ChangeNotifier {
     final normalized = value.trim();
     final validation = _validateNewKeyword(normalized);
     if (validation != null) {
-      _state = ExclusionKeywordState(
-        keywords: _state.keywords,
-        isLoading: _state.isLoading,
-        isSaving: _state.isSaving,
-        errorMessage: validation,
-      );
+      _state = _state.copyWith(errorMessage: validation);
       notifyListeners();
       return;
     }
 
-    _state = ExclusionKeywordState(
+    _state = _state.copyWith(
       keywords: [
         ..._state.keywords,
         ExclusionKeyword(keyword: normalized, isActive: true),
       ],
-      isLoading: _state.isLoading,
+      isSaving: false,
     );
     notifyListeners();
   }
 
   void removeKeyword(String keyword) {
-    _state = ExclusionKeywordState(
+    _state = _state.copyWith(
       keywords: _state.keywords
           .where((item) => item.keyword != keyword)
           .toList(),
-      isLoading: _state.isLoading,
+      isSaving: false,
     );
     notifyListeners();
   }
 
   Future<void> save() async {
-    _state = ExclusionKeywordState(keywords: _state.keywords, isSaving: true);
+    _state = _state.copyWith(isLoading: false, isSaving: true);
     notifyListeners();
 
     try {
       await _saveExclusionKeywords(_state.keywords);
-      _state = ExclusionKeywordState(
-        keywords: _state.keywords,
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
         noticeMessage: '保存しました。',
       );
       notifyListeners();
     } catch (_) {
-      _state = ExclusionKeywordState(
-        keywords: _state.keywords,
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
         errorMessage: '除外キーワードの保存に失敗しました。',
       );
       notifyListeners();

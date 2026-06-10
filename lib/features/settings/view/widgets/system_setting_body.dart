@@ -31,7 +31,6 @@ class _SystemSettingBodyState extends State<SystemSettingBody> {
     _searchMaxResultsController.dispose();
     _searchMaxPagesController.dispose();
     _recentSearchDaysController.dispose();
-    widget.vm.dispose();
     super.dispose();
   }
 

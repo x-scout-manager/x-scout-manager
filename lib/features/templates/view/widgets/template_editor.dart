@@ -29,7 +29,6 @@ class _TemplateEditorState extends State<TemplateEditor> {
   void dispose() {
     _nameController.dispose();
     _bodyController.dispose();
-    widget.vm.dispose();
     super.dispose();
   }
 

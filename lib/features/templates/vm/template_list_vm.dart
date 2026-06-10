@@ -23,16 +23,34 @@ class TemplateListState {
   final bool isSaving;
   final String? errorMessage;
   final String? noticeMessage;
+
+  TemplateListState copyWith({
+    List<DmTemplate>? templates,
+    DmTemplate? editing,
+    bool? isLoading,
+    bool? isSaving,
+    String? errorMessage,
+    String? noticeMessage,
+  }) {
+    return TemplateListState(
+      templates: templates ?? this.templates,
+      editing: editing ?? this.editing,
+      isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
+      errorMessage: errorMessage,
+      noticeMessage: noticeMessage,
+    );
+  }
 }
 
 class TemplateListVm extends ChangeNotifier {
   TemplateListVm(this._loadTemplates, this._saveTemplate) {
     _subscription = _loadTemplates().listen(
       (templates) {
-        _state = TemplateListState(
+        _state = _state.copyWith(
           templates: templates,
-          editing: _state.editing,
           isLoading: false,
+          isSaving: false,
         );
         notifyListeners();
       },
@@ -55,38 +73,46 @@ class TemplateListVm extends ChangeNotifier {
   TemplateListState get state => _state;
 
   void startCreate() {
-    _state = TemplateListState(
-      templates: _state.templates,
+    _state = _state.copyWith(
       editing: DmTemplate.empty,
+      isLoading: false,
+      isSaving: false,
     );
     notifyListeners();
   }
 
   void startEdit(DmTemplate template) {
-    _state = TemplateListState(templates: _state.templates, editing: template);
+    _state = _state.copyWith(
+      editing: template,
+      isLoading: false,
+      isSaving: false,
+    );
     notifyListeners();
   }
 
   void updateName(String name) {
-    _state = TemplateListState(
-      templates: _state.templates,
+    _state = _state.copyWith(
       editing: _state.editing.copyWith(name: name),
+      isLoading: false,
+      isSaving: false,
     );
     notifyListeners();
   }
 
   void updateBody(String body) {
-    _state = TemplateListState(
-      templates: _state.templates,
+    _state = _state.copyWith(
       editing: _state.editing.copyWith(body: body),
+      isLoading: false,
+      isSaving: false,
     );
     notifyListeners();
   }
 
   void updateIsActive(bool isActive) {
-    _state = TemplateListState(
-      templates: _state.templates,
+    _state = _state.copyWith(
       editing: _state.editing.copyWith(isActive: isActive),
+      isLoading: false,
+      isSaving: false,
     );
     notifyListeners();
   }
@@ -102,18 +128,19 @@ class TemplateListVm extends ChangeNotifier {
   Future<void> _save(DmTemplate template) async {
     final validation = _validate(template);
     if (validation != null) {
-      _state = TemplateListState(
-        templates: _state.templates,
+      _state = _state.copyWith(
         editing: template,
+        isLoading: false,
+        isSaving: false,
         errorMessage: validation,
       );
       notifyListeners();
       return;
     }
 
-    _state = TemplateListState(
-      templates: _state.templates,
+    _state = _state.copyWith(
       editing: template,
+      isLoading: false,
       isSaving: true,
     );
     notifyListeners();
@@ -125,23 +152,26 @@ class TemplateListVm extends ChangeNotifier {
           body: template.body.trim(),
         ),
       );
-      _state = TemplateListState(
-        templates: _state.templates,
+      _state = _state.copyWith(
         editing: DmTemplate.empty,
+        isLoading: false,
+        isSaving: false,
         noticeMessage: '保存しました。',
       );
       notifyListeners();
     } on AppError catch (error) {
-      _state = TemplateListState(
-        templates: _state.templates,
+      _state = _state.copyWith(
         editing: template,
+        isLoading: false,
+        isSaving: false,
         errorMessage: error.message,
       );
       notifyListeners();
     } catch (_) {
-      _state = TemplateListState(
-        templates: _state.templates,
+      _state = _state.copyWith(
         editing: template,
+        isLoading: false,
+        isSaving: false,
         errorMessage: 'テンプレートの保存に失敗しました。',
       );
       notifyListeners();

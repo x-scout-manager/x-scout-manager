@@ -5,17 +5,34 @@ import '../../../../core/ui/widgets/app_scaffold.dart';
 import '../../vm/tag_setting_vm.dart';
 import '../widgets/tag_setting_body.dart';
 
-class TagSettingPage extends StatelessWidget {
+class TagSettingPage extends StatefulWidget {
   const TagSettingPage({super.key});
 
   @override
+  State<TagSettingPage> createState() => _TagSettingPageState();
+}
+
+class _TagSettingPageState extends State<TagSettingPage> {
+  late final TagSettingVm _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    final dependencies = AppProviders.read(context);
+    _vm = TagSettingVm(dependencies.loadScoutSettings, dependencies.saveTags);
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final dependencies = AppProviders.of(context);
     return AppScaffold(
       title: 'タグ設定',
-      body: TagSettingBody(
-        vm: TagSettingVm(dependencies.loadScoutSettings, dependencies.saveTags),
-      ),
+      body: TagSettingBody(vm: _vm),
     );
   }
 }

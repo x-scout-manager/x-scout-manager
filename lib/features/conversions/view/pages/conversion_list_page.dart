@@ -6,21 +6,40 @@ import '../../model/conversion.dart';
 import '../../vm/conversion_form_vm.dart';
 import '../../vm/conversion_list_vm.dart';
 
-class ConversionListPage extends StatelessWidget {
+class ConversionListPage extends StatefulWidget {
   const ConversionListPage({super.key});
 
   @override
+  State<ConversionListPage> createState() => _ConversionListPageState();
+}
+
+class _ConversionListPageState extends State<ConversionListPage> {
+  late final ConversionListVm _listVm;
+  late final ConversionFormVm _formVm;
+
+  @override
+  void initState() {
+    super.initState();
+    final dependencies = AppProviders.read(context);
+    _listVm = ConversionListVm(dependencies.loadConversions);
+    _formVm = ConversionFormVm(
+      dependencies.loadSendHistories,
+      dependencies.createConversion,
+    );
+  }
+
+  @override
+  void dispose() {
+    _listVm.dispose();
+    _formVm.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final dependencies = AppProviders.of(context);
     return AppScaffold(
       title: '成約記録',
-      body: _ConversionPageBody(
-        listVm: ConversionListVm(dependencies.loadConversions),
-        formVm: ConversionFormVm(
-          dependencies.loadSendHistories,
-          dependencies.createConversion,
-        ),
-      ),
+      body: _ConversionPageBody(listVm: _listVm, formVm: _formVm),
     );
   }
 }
@@ -36,13 +55,6 @@ class _ConversionPageBody extends StatefulWidget {
 }
 
 class _ConversionPageBodyState extends State<_ConversionPageBody> {
-  @override
-  void dispose() {
-    widget.listVm.dispose();
-    widget.formVm.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -82,10 +94,7 @@ class _ConversionForm extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '成約記録を登録',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('成約記録を登録', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: state.selectedHistoryId,

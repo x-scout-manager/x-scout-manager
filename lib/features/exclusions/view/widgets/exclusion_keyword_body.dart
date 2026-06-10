@@ -24,7 +24,6 @@ class _ExclusionKeywordBodyState extends State<ExclusionKeywordBody> {
   @override
   void dispose() {
     _controller.dispose();
-    widget.vm.dispose();
     super.dispose();
   }
 

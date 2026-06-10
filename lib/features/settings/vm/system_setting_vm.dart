@@ -20,15 +20,32 @@ class SystemSettingState {
   final bool isSaving;
   final String? errorMessage;
   final String? noticeMessage;
+
+  SystemSettingState copyWith({
+    ScoutSettings? settings,
+    bool? isLoading,
+    bool? isSaving,
+    String? errorMessage,
+    String? noticeMessage,
+  }) {
+    return SystemSettingState(
+      settings: settings ?? this.settings,
+      isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
+      errorMessage: errorMessage,
+      noticeMessage: noticeMessage,
+    );
+  }
 }
 
 class SystemSettingVm extends ChangeNotifier {
   SystemSettingVm(this._loadScoutSettings, this._saveScoutSettings) {
     _subscription = _loadScoutSettings().listen(
       (settings) {
-        _state = SystemSettingState(
+        _state = _state.copyWith(
           settings: settings ?? ScoutSettings.defaults,
           isLoading: false,
+          isSaving: false,
         );
         notifyListeners();
       },
@@ -58,7 +75,7 @@ class SystemSettingVm extends ChangeNotifier {
     bool? apiDmEnabled,
     bool? manualSendEnabled,
   }) {
-    _state = SystemSettingState(
+    _state = _state.copyWith(
       settings: _state.settings.copyWith(
         searchMaxResults: searchMaxResults,
         searchMaxPages: searchMaxPages,
@@ -67,7 +84,7 @@ class SystemSettingVm extends ChangeNotifier {
         apiDmEnabled: apiDmEnabled,
         manualSendEnabled: manualSendEnabled,
       ),
-      isLoading: _state.isLoading,
+      isSaving: false,
     );
     notifyListeners();
   }
@@ -75,27 +92,30 @@ class SystemSettingVm extends ChangeNotifier {
   Future<void> save() async {
     final validation = _validate(_state.settings);
     if (validation != null) {
-      _state = SystemSettingState(
-        settings: _state.settings,
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
         errorMessage: validation,
       );
       notifyListeners();
       return;
     }
 
-    _state = SystemSettingState(settings: _state.settings, isSaving: true);
+    _state = _state.copyWith(isLoading: false, isSaving: true);
     notifyListeners();
 
     try {
       await _saveScoutSettings(_state.settings);
-      _state = SystemSettingState(
-        settings: _state.settings,
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
         noticeMessage: '保存しました。',
       );
       notifyListeners();
     } catch (_) {
-      _state = SystemSettingState(
-        settings: _state.settings,
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
         errorMessage: 'システム設定の保存に失敗しました。',
       );
       notifyListeners();
