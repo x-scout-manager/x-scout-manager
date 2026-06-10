@@ -6,14 +6,13 @@ import type {CandidateData} from "../shared/types";
 import {
   boundedInteger,
   mapRecord,
-  normalizeStringList,
   stringInput,
 } from "../shared/validators";
 
-type SyncRunInfo = {
-  runId: string;
-  createdAtMs: number;
-};
+type CleanupDecision =
+  {type: "delete"} |
+  {type: "restore"; beforeSnapshot: Record<string, unknown>} |
+  {type: "skip"; reason: string};
 
 export const cleanupRevertedCandidates = onCall(async (request) => {
   const admin = await requireAdmin(request);
@@ -46,34 +45,6 @@ export const cleanupRevertedCandidates = onCall(async (request) => {
     const candidateId = stringInput(candidate.candidateId) ||
       candidateSnapshot.id;
     const xUserId = stringInput(candidate.xUserId) || candidateId;
-    const runIds = candidateRunIds(candidate);
-
-    if (runIds.length === 0) {
-      skippedCount++;
-      skipped.push({candidateId, reason: "sync_run_missing"});
-      continue;
-    }
-
-    const runInfos: SyncRunInfo[] = [];
-    let hasUnrevertedRun = false;
-    for (const runId of runIds) {
-      const runSnapshot = await db.doc(`candidate_sync_runs/${runId}`).get();
-      const run = runSnapshot.data();
-      if (!runSnapshot.exists || run?.status !== "reverted") {
-        hasUnrevertedRun = true;
-        break;
-      }
-      runInfos.push({
-        runId,
-        createdAtMs: timestampMillis(run?.createdAt),
-      });
-    }
-
-    if (hasUnrevertedRun) {
-      skippedCount++;
-      skipped.push({candidateId, reason: "active_sync_run_exists"});
-      continue;
-    }
 
     const [historySnapshot, queueItemsSnapshot] = await Promise.all([
       db.collection("send_histories")
@@ -97,24 +68,16 @@ export const cleanupRevertedCandidates = onCall(async (request) => {
       continue;
     }
 
-    runInfos.sort((a, b) => a.createdAtMs - b.createdAtMs);
-    let beforeSnapshot: Record<string, unknown> | null = null;
-    for (const runInfo of runInfos) {
-      const changeSnapshot = await db
-        .doc(`candidate_sync_runs/${runInfo.runId}/changes/${candidateId}`)
-        .get();
-      const changeBeforeSnapshot = mapRecord(
-        changeSnapshot.data()?.beforeSnapshot,
-      );
-      if (changeBeforeSnapshot) {
-        beforeSnapshot = changeBeforeSnapshot;
-        break;
-      }
+    const decision = await resolveCleanupDecision(candidateId, candidate);
+    if (decision.type === "skip") {
+      skippedCount++;
+      skipped.push({candidateId, reason: decision.reason});
+      continue;
     }
 
-    if (beforeSnapshot) {
+    if (decision.type === "restore") {
       batch.set(candidateSnapshot.ref, {
-        ...beforeSnapshot,
+        ...decision.beforeSnapshot,
         restoredFromCleanupAt: now,
         restoredFromCleanupBy: admin.uid,
         updatedAt: now,
@@ -140,23 +103,57 @@ export const cleanupRevertedCandidates = onCall(async (request) => {
   };
 });
 
-function candidateRunIds(candidate: CandidateData): string[] {
-  const syncRunIds = normalizeStringList(candidate.syncRunIds);
-  const lastSyncRunId = stringInput(candidate.lastSyncRunId);
-  if (lastSyncRunId) {
-    syncRunIds.push(lastSyncRunId);
+async function resolveCleanupDecision(
+  candidateId: string,
+  candidate: CandidateData,
+): Promise<CleanupDecision> {
+  let currentRunId = stringInput(candidate.lastSyncRunId);
+  if (!currentRunId) {
+    return {type: "skip", reason: "last_sync_run_missing"};
   }
-  return [...new Set(syncRunIds)];
-}
 
-function timestampMillis(value: unknown): number {
-  if (value && typeof value === "object" && "toMillis" in value) {
-    const toMillis = (value as {toMillis?: unknown}).toMillis;
-    if (typeof toMillis === "function") {
-      return toMillis.call(value);
+  const visitedRunIds = new Set<string>();
+  for (let depth = 0; depth < 30; depth++) {
+    if (visitedRunIds.has(currentRunId)) {
+      return {type: "skip", reason: "sync_run_cycle"};
     }
+    visitedRunIds.add(currentRunId);
+
+    const runSnapshot = await db.doc(`candidate_sync_runs/${currentRunId}`)
+      .get();
+    const run = runSnapshot.data();
+    if (!runSnapshot.exists || run?.status !== "reverted") {
+      return {type: "skip", reason: "active_sync_run_exists"};
+    }
+
+    const changeSnapshot = await db
+      .doc(`candidate_sync_runs/${currentRunId}/changes/${candidateId}`)
+      .get();
+    if (!changeSnapshot.exists) {
+      return {type: "skip", reason: "sync_change_missing"};
+    }
+
+    const beforeSnapshot = mapRecord(changeSnapshot.data()?.beforeSnapshot);
+    if (!beforeSnapshot) {
+      return {type: "delete"};
+    }
+
+    const beforeLastSyncRunId = stringInput(beforeSnapshot.lastSyncRunId);
+    if (stringInput(beforeSnapshot.status) === "candidate" &&
+      beforeLastSyncRunId) {
+      const beforeRunSnapshot = await db
+        .doc(`candidate_sync_runs/${beforeLastSyncRunId}`)
+        .get();
+      if (beforeRunSnapshot.data()?.status === "reverted") {
+        currentRunId = beforeLastSyncRunId;
+        continue;
+      }
+    }
+
+    return {type: "restore", beforeSnapshot};
   }
-  return 0;
+
+  return {type: "skip", reason: "sync_run_chain_too_deep"};
 }
 
 async function hasActiveQueueItem(
