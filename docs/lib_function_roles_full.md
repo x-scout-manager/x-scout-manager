@@ -91,7 +91,7 @@
 | `functions/src/x/x_search.ts` | X API Bearer Token取得、Recent Searchクエリ生成、X API検索通信 |
 | `functions/src/candidates/sync_candidates.ts` | タグ検索条件に応じたX API候補抽出とFirestore保存 |
 | `functions/src/candidates/revert_candidate_sync_run.ts` | 候補抽出run単位の解除処理。削除済み送信キューのみ紐づく候補は解除対象に含める |
-| `functions/src/candidates/cleanup_reverted_candidates.ts` | すべての抽出元runが解除済みの未送信候補を安全条件付きで再掃除 |
+| `functions/src/candidates/cleanup_reverted_candidates.ts` | すべての抽出元runが解除済みの未送信候補を安全条件付きで再掃除。古い `lastSyncRunId` 欠落候補は送信履歴/有効キュー保護後にフォールバック判定する |
 | `functions/src/candidates/candidate_sync_run_repository.ts` | 抽出run解除用差分 `candidate_sync_runs/{runId}/changes` の保存 |
 | `functions/src/send_queue/create_send_queue.ts` | 候補から送信キューを作成するCallable定義 |
 | `functions/src/send_queue/delete_send_queue.ts` | 送信キューを論理削除し、一覧から非表示にするCallable定義 |

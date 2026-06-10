@@ -269,13 +269,21 @@ class _SyncRunPanel extends StatelessWidget {
                       '新規${run.createdCount} 更新${run.updatedCount} 除外${run.excludedCount}',
                     ),
                   ),
-                  DataCell(Text(run.statusLabel)),
                   DataCell(
-                    TextButton(
-                      onPressed: run.canRevert && !isReverting
-                          ? () => onRevert(run)
-                          : null,
-                      child: Text(isReverting ? '解除中' : '解除'),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minWidth: 72),
+                      child: Text(run.statusLabel, softWrap: false),
+                    ),
+                  ),
+                  DataCell(
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minWidth: 72),
+                      child: TextButton(
+                        onPressed: run.canRevert && !isReverting
+                            ? () => onRevert(run)
+                            : null,
+                        child: Text(isReverting ? '解除中' : '解除'),
+                      ),
                     ),
                   ),
                 ],

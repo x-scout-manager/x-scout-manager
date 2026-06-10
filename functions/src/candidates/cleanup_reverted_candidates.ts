@@ -6,6 +6,7 @@ import type {CandidateData} from "../shared/types";
 import {
   boundedInteger,
   mapRecord,
+  normalizeStringList,
   stringInput,
 } from "../shared/validators";
 
@@ -119,9 +120,59 @@ async function resolveCleanupDecision(
 ): Promise<CleanupDecision> {
   let currentRunId = stringInput(candidate.lastSyncRunId);
   if (!currentRunId) {
-    return {type: "skip", reason: "last_sync_run_missing"};
+    return resolveMissingLastSyncRunDecision(candidateId, candidate);
   }
 
+  return resolveCleanupDecisionFromRun(candidateId, currentRunId);
+}
+
+async function resolveMissingLastSyncRunDecision(
+  candidateId: string,
+  candidate: CandidateData,
+): Promise<CleanupDecision> {
+  const syncRunIds = normalizeStringList(candidate.syncRunIds);
+  if (syncRunIds.length === 0) {
+    return {type: "delete"};
+  }
+
+  const revertedRuns: Array<{runId: string; createdAtMillis: number}> = [];
+  for (const runId of syncRunIds) {
+    const runSnapshot = await db.doc(`candidate_sync_runs/${runId}`).get();
+    if (!runSnapshot.exists) {
+      continue;
+    }
+    const run = runSnapshot.data();
+    if (run?.status !== "reverted") {
+      return {type: "skip", reason: "active_sync_run_exists"};
+    }
+    const changeSnapshot = await db
+      .doc(`candidate_sync_runs/${runId}/changes/${candidateId}`)
+      .get();
+    if (!changeSnapshot.exists) {
+      continue;
+    }
+    const createdAt = run?.createdAt;
+    revertedRuns.push({
+      runId,
+      createdAtMillis: createdAt instanceof Timestamp ?
+        createdAt.toMillis() :
+        0,
+    });
+  }
+
+  if (revertedRuns.length === 0) {
+    return {type: "delete"};
+  }
+
+  revertedRuns.sort((a, b) => b.createdAtMillis - a.createdAtMillis);
+  return resolveCleanupDecisionFromRun(candidateId, revertedRuns[0].runId);
+}
+
+async function resolveCleanupDecisionFromRun(
+  candidateId: string,
+  startRunId: string,
+): Promise<CleanupDecision> {
+  let currentRunId = startRunId;
   const visitedRunIds = new Set<string>();
   for (let depth = 0; depth < 30; depth++) {
     if (visitedRunIds.has(currentRunId)) {
