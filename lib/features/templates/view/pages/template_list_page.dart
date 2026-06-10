@@ -19,7 +19,11 @@ class _TemplateListPageState extends State<TemplateListPage> {
   void initState() {
     super.initState();
     final dependencies = AppProviders.read(context);
-    _vm = TemplateListVm(dependencies.loadTemplates, dependencies.saveTemplate);
+    _vm = TemplateListVm(
+      dependencies.loadTemplates,
+      dependencies.deleteTemplate,
+      dependencies.saveTemplate,
+    );
   }
 
   @override

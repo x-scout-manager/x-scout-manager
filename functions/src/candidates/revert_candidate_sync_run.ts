@@ -73,7 +73,7 @@ export const revertCandidateSyncRun = onCall(async (request) => {
       skipped.push({candidateId, reason: "sent_history_exists"});
       continue;
     }
-    if (!queueItemsSnapshot.empty) {
+    if (await hasActiveQueueItem(queueItemsSnapshot)) {
       skippedCount++;
       skipped.push({candidateId, reason: "send_queue_item_exists"});
       continue;
@@ -150,3 +150,19 @@ export const revertCandidateSyncRun = onCall(async (request) => {
     skipped,
   };
 });
+
+async function hasActiveQueueItem(
+  queueItemsSnapshot: FirebaseFirestore.QuerySnapshot,
+): Promise<boolean> {
+  for (const itemDoc of queueItemsSnapshot.docs) {
+    const queueRef = itemDoc.ref.parent.parent;
+    if (!queueRef) {
+      continue;
+    }
+    const queueSnapshot = await queueRef.get();
+    if (queueSnapshot.data()?.status !== "deleted") {
+      return true;
+    }
+  }
+  return false;
+}

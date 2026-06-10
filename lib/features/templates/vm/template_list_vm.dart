@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/app_error.dart';
 import '../model/dm_template.dart';
+import '../usecase/delete_template.dart';
 import '../usecase/load_templates.dart';
 import '../usecase/save_template.dart';
 
@@ -44,7 +45,11 @@ class TemplateListState {
 }
 
 class TemplateListVm extends ChangeNotifier {
-  TemplateListVm(this._loadTemplates, this._saveTemplate) {
+  TemplateListVm(
+    this._loadTemplates,
+    this._deleteTemplate,
+    this._saveTemplate,
+  ) {
     _subscription = _loadTemplates().listen(
       (templates) {
         _state = _state.copyWith(
@@ -65,6 +70,7 @@ class TemplateListVm extends ChangeNotifier {
   }
 
   final LoadTemplates _loadTemplates;
+  final DeleteTemplate _deleteTemplate;
   final SaveTemplate _saveTemplate;
   late final StreamSubscription _subscription;
 
@@ -123,6 +129,40 @@ class TemplateListVm extends ChangeNotifier {
 
   Future<void> disable(DmTemplate template) async {
     await _save(template.copyWith(isActive: false));
+  }
+
+  Future<void> delete(DmTemplate template) async {
+    if (template.templateId.isEmpty) {
+      return;
+    }
+
+    _state = _state.copyWith(isLoading: false, isSaving: true);
+    notifyListeners();
+
+    try {
+      await _deleteTemplate(template.templateId);
+      _state = _state.copyWith(
+        editing: DmTemplate.empty,
+        isLoading: false,
+        isSaving: false,
+        noticeMessage: '削除しました。',
+      );
+      notifyListeners();
+    } on AppError catch (error) {
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
+        errorMessage: error.message,
+      );
+      notifyListeners();
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        isSaving: false,
+        errorMessage: 'テンプレートの削除に失敗しました。',
+      );
+      notifyListeners();
+    }
   }
 
   Future<void> _save(DmTemplate template) async {

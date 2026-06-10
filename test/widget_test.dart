@@ -125,6 +125,9 @@ class _FakeExclusionRepository implements ExclusionRepository {
 
 class _FakeTemplateRepository implements TemplateRepository {
   @override
+  Future<void> deleteTemplate(String templateId) async {}
+
+  @override
   Stream<List<DmTemplate>> watchTemplates() {
     return Stream.value(const []);
   }

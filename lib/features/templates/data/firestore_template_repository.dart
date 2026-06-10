@@ -22,6 +22,7 @@ class FirestoreTemplateRepository implements TemplateRepository {
     return _collection.snapshots().map((snapshot) {
       final templates = snapshot.docs
           .map((doc) => DmTemplate.fromJson(doc.id, doc.data()))
+          .where((template) => !template.isDeleted)
           .toList();
       templates.sort((a, b) {
         final orderCompare = (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0);
@@ -46,6 +47,18 @@ class FirestoreTemplateRepository implements TemplateRepository {
       ...savedTemplate.toJson(),
       if (!snapshot.exists) 'createdAt': FieldValue.serverTimestamp(),
       if (!snapshot.exists) 'createdBy': _firebaseAuth.currentUser?.uid,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': _firebaseAuth.currentUser?.uid,
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> deleteTemplate(String templateId) async {
+    await _collection.doc(templateId).set({
+      'isDeleted': true,
+      'isActive': false,
+      'deletedAt': FieldValue.serverTimestamp(),
+      'deletedBy': _firebaseAuth.currentUser?.uid,
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': _firebaseAuth.currentUser?.uid,
     }, SetOptions(merge: true));

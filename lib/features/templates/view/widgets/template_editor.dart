@@ -78,6 +78,7 @@ class _TemplateEditorState extends State<TemplateEditor> {
                   isSaving: state.isSaving,
                   onEdit: widget.vm.startEdit,
                   onDisable: widget.vm.disable,
+                  onDelete: widget.vm.delete,
                 ),
               ],
             ),
@@ -177,12 +178,14 @@ class _TemplateList extends StatelessWidget {
     required this.isSaving,
     required this.onEdit,
     required this.onDisable,
+    required this.onDelete,
   });
 
   final List<DmTemplate> templates;
   final bool isSaving;
   final ValueChanged<DmTemplate> onEdit;
   final ValueChanged<DmTemplate> onDisable;
+  final ValueChanged<DmTemplate> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -223,6 +226,10 @@ class _TemplateList extends StatelessWidget {
                         ? null
                         : () => onDisable(template),
                     child: const Text('無効化'),
+                  ),
+                  TextButton(
+                    onPressed: isSaving ? null : () => onDelete(template),
+                    child: const Text('削除'),
                   ),
                 ],
               ),

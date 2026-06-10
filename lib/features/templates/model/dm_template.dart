@@ -4,6 +4,7 @@ class DmTemplate {
     required this.name,
     required this.body,
     required this.isActive,
+    this.isDeleted = false,
     this.sortOrder,
   });
 
@@ -11,6 +12,7 @@ class DmTemplate {
   final String name;
   final String body;
   final bool isActive;
+  final bool isDeleted;
   final int? sortOrder;
 
   static const empty = DmTemplate(
@@ -18,6 +20,7 @@ class DmTemplate {
     name: '',
     body: '',
     isActive: true,
+    isDeleted: false,
   );
 
   DmTemplate copyWith({
@@ -25,6 +28,7 @@ class DmTemplate {
     String? name,
     String? body,
     bool? isActive,
+    bool? isDeleted,
     int? sortOrder,
   }) {
     return DmTemplate(
@@ -32,6 +36,7 @@ class DmTemplate {
       name: name ?? this.name,
       body: body ?? this.body,
       isActive: isActive ?? this.isActive,
+      isDeleted: isDeleted ?? this.isDeleted,
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }
@@ -43,6 +48,7 @@ class DmTemplate {
       name: json['name'] is String ? json['name'] as String : '',
       body: json['body'] is String ? json['body'] as String : '',
       isActive: json['isActive'] is bool ? json['isActive'] == true : true,
+      isDeleted: json['isDeleted'] is bool ? json['isDeleted'] == true : false,
       sortOrder: sortOrderValue is num ? sortOrderValue.toInt() : null,
     );
   }
@@ -53,6 +59,7 @@ class DmTemplate {
       'name': name,
       'body': body,
       'isActive': isActive,
+      'isDeleted': isDeleted,
       if (sortOrder != null) 'sortOrder': sortOrder,
     };
   }

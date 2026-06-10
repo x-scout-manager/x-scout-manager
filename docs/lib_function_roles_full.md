@@ -26,7 +26,7 @@
 | `lib/features/dashboard/**` | 候補数・送信済み数・除外数など概要表示のfeature構成 |
 | `lib/features/candidates/**` | 候補一覧、候補詳細、候補抽出、抽出履歴/解除、タグ検索モード切替、除外/復元のfeature構成 |
 | `lib/features/send_queue/**` | 送信キュー作成、個別DM送信、手動送信済み登録、送信キュー論理削除、スキップのfeature構成 |
-| `lib/features/templates/**` | DMテンプレート一覧・保存のfeature構成 |
+| `lib/features/templates/**` | DMテンプレート一覧・保存・論理削除のfeature構成 |
 | `lib/features/histories/**` | 送信履歴表示のfeature構成 |
 | `lib/features/exclusions/**` | 除外アカウント、除外キーワード設定のfeature構成 |
 | `lib/features/conversions/**` | 初期運用ではメイン導線から非表示。将来の成約記録/成果メモ用feature構成 |
@@ -90,7 +90,7 @@
 | `functions/src/shared/errors.ts` | Functionsエラーをログ保存用payloadへ変換 |
 | `functions/src/x/x_search.ts` | X API Bearer Token取得、Recent Searchクエリ生成、X API検索通信 |
 | `functions/src/candidates/sync_candidates.ts` | タグ検索条件に応じたX API候補抽出とFirestore保存 |
-| `functions/src/candidates/revert_candidate_sync_run.ts` | 候補抽出run単位の解除処理 |
+| `functions/src/candidates/revert_candidate_sync_run.ts` | 候補抽出run単位の解除処理。削除済み送信キューのみ紐づく候補は解除対象に含める |
 | `functions/src/candidates/candidate_sync_run_repository.ts` | 抽出run解除用差分 `candidate_sync_runs/{runId}/changes` の保存 |
 | `functions/src/send_queue/create_send_queue.ts` | 候補から送信キューを作成するCallable定義 |
 | `functions/src/send_queue/delete_send_queue.ts` | 送信キューを論理削除し、一覧から非表示にするCallable定義 |

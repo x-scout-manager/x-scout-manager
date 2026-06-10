@@ -48,6 +48,7 @@ import '../../features/send_queue/usecase/mark_as_manually_sent.dart';
 import '../../features/send_queue/usecase/send_direct_message.dart';
 import '../../features/templates/data/firestore_template_repository.dart';
 import '../../features/templates/data/template_repository.dart';
+import '../../features/templates/usecase/delete_template.dart';
 import '../../features/templates/usecase/load_templates.dart';
 import '../../features/templates/usecase/save_template.dart';
 
@@ -130,6 +131,8 @@ class AppDependencies {
       LoadExcludedAccounts(exclusionRepository);
 
   LoadTemplates get loadTemplates => LoadTemplates(templateRepository);
+
+  DeleteTemplate get deleteTemplate => DeleteTemplate(templateRepository);
 
   SaveTemplate get saveTemplate => SaveTemplate(templateRepository);
 

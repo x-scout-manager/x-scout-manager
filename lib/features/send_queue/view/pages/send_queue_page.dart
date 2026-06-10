@@ -300,10 +300,25 @@ class _SendQueueBodyState extends State<_SendQueueBody> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: Text(queue.name ?? '送信キュー')),
-                    OutlinedButton.icon(
-                      onPressed: state.isProcessing ? null : _deleteQueue,
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('キュー削除'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: state.isProcessing
+                              ? null
+                              : () => Navigator.of(
+                                  context,
+                                ).pushReplacementNamed(RoutePaths.sendQueue),
+                          icon: const Icon(Icons.arrow_back),
+                          label: const Text('一覧へ戻る'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: state.isProcessing ? null : _deleteQueue,
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('キュー削除'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
