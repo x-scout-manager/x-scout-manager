@@ -74,17 +74,26 @@ class CleanupRevertedCandidatesResult {
     required this.restoredCount,
     required this.deletedCount,
     required this.skippedCount,
+    this.skippedReasons = const {},
   });
 
   final int restoredCount;
   final int deletedCount;
   final int skippedCount;
+  final Map<String, int> skippedReasons;
 
   factory CleanupRevertedCandidatesResult.fromJson(Map<Object?, Object?> json) {
+    final reasons = json['skippedReasons'] is Map
+        ? Map<Object?, Object?>.from(json['skippedReasons'] as Map)
+        : const <Object?, Object?>{};
     return CleanupRevertedCandidatesResult(
       restoredCount: SyncCandidatesResult._intValue(json['restoredCount']),
       deletedCount: SyncCandidatesResult._intValue(json['deletedCount']),
       skippedCount: SyncCandidatesResult._intValue(json['skippedCount']),
+      skippedReasons: reasons.map(
+        (key, value) =>
+            MapEntry(key.toString(), SyncCandidatesResult._intValue(value)),
+      ),
     );
   }
 }

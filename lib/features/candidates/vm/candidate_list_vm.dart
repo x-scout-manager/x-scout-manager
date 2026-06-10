@@ -6,6 +6,7 @@ import '../../../core/errors/app_error.dart';
 import '../../settings/model/scout_settings.dart';
 import '../../settings/usecase/load_scout_settings.dart';
 import '../../settings/usecase/save_scout_settings.dart';
+import '../data/candidate_functions_repository.dart';
 import '../model/candidate.dart';
 import '../model/candidate_sync_run.dart';
 import '../usecase/cleanup_reverted_candidates.dart';
@@ -296,8 +297,7 @@ class CandidateListVm extends ChangeNotifier {
       final result = await _cleanupRevertedCandidates();
       _state = _state.copyWith(
         isCleaningRevertedCandidates: false,
-        noticeMessage:
-            '解除済み候補を再掃除しました。復元${result.restoredCount}件、削除${result.deletedCount}件、スキップ${result.skippedCount}件。',
+        noticeMessage: _cleanupNotice(result),
       );
       notifyListeners();
     } on AppError catch (error) {
@@ -313,6 +313,31 @@ class CandidateListVm extends ChangeNotifier {
       );
       notifyListeners();
     }
+  }
+
+  String _cleanupNotice(CleanupRevertedCandidatesResult result) {
+    final base =
+        '解除済み候補を再掃除しました。復元${result.restoredCount}件、削除${result.deletedCount}件、スキップ${result.skippedCount}件。';
+    if (result.skippedReasons.isEmpty) {
+      return base;
+    }
+    final reasons = result.skippedReasons.entries
+        .map((entry) => '${_skipReasonLabel(entry.key)}${entry.value}件')
+        .join('、');
+    return '$base スキップ理由: $reasons。';
+  }
+
+  String _skipReasonLabel(String reason) {
+    return switch (reason) {
+      'sent_history_exists' => '送信履歴あり',
+      'send_queue_item_exists' => '送信キュー明細あり',
+      'last_sync_run_missing' => '最終抽出IDなし',
+      'active_sync_run_exists' => '未解除の抽出あり',
+      'sync_change_missing' => '抽出差分なし',
+      'sync_run_cycle' => '抽出履歴循環',
+      'sync_run_chain_too_deep' => '抽出履歴が深すぎる',
+      _ => '$reason ',
+    };
   }
 
   Future<String?> createQueue() async {

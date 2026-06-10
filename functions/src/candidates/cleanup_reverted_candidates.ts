@@ -99,9 +99,19 @@ export const cleanupRevertedCandidates = onCall(async (request) => {
     restoredCount,
     deletedCount,
     skippedCount,
+    skippedReasons: summarizeSkippedReasons(skipped),
     skipped,
   };
 });
+
+function summarizeSkippedReasons(
+  skipped: Array<{candidateId: string; reason: string}>,
+): Record<string, number> {
+  return skipped.reduce<Record<string, number>>((summary, item) => {
+    summary[item.reason] = (summary[item.reason] ?? 0) + 1;
+    return summary;
+  }, {});
+}
 
 async function resolveCleanupDecision(
   candidateId: string,
