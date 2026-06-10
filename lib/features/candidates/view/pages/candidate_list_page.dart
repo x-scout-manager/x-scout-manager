@@ -266,7 +266,8 @@ class _SyncRunPanel extends StatelessWidget {
                   ),
                   DataCell(
                     Text(
-                      '新規${run.createdCount} 更新${run.updatedCount} 除外${run.excludedCount}',
+                      '新規${run.createdCount} 更新${run.updatedCount} '
+                      '除外${run.excludedCount} 除外済みスキップ${run.skippedExistingExcludedCount}',
                     ),
                   ),
                   DataCell(

@@ -94,10 +94,14 @@ export const syncCandidates = onCall(
         sourcePostIds: Set<string>;
       }>();
       const searchQueries = buildSearchQueries(tags, tagSearchMode);
+      let eligibleDiscoveryCount = 0;
+      let existingExcludedDiscoveryCount = 0;
+      let pagesFetched = 0;
+      let extraPagesFetched = 0;
 
       for (const searchQuery of searchQueries) {
         let nextToken = "";
-        for (let page = 0; page < maxPages; page++) {
+        for (let page = 0; page < 10; page++) {
           const response = await searchRecentPosts({
             token,
             query: searchQuery.query,
@@ -133,11 +137,33 @@ export const syncCandidates = onCall(
             if (postId) {
               current.sourcePostIds.add(postId);
             }
+            if (!discovered.has(userId)) {
+              const status = await resolveDiscoveryStatus(userId);
+              if (status.isExistingExcluded) {
+                existingExcludedDiscoveryCount++;
+              } else {
+                eligibleDiscoveryCount++;
+              }
+            }
             discovered.set(userId, current);
           }
 
+          pagesFetched++;
+          if (page >= maxPages) {
+            extraPagesFetched++;
+          }
           nextToken = stringInput(response.meta?.next_token);
           if (!nextToken) {
+            break;
+          }
+          const pageLimit = Math.min(
+            10,
+            maxPages + Math.ceil(existingExcludedDiscoveryCount / maxResults),
+          );
+          if (page + 1 >= pageLimit) {
+            break;
+          }
+          if (page + 1 >= maxPages && eligibleDiscoveryCount >= maxResults) {
             break;
           }
         }
@@ -326,6 +352,9 @@ export const syncCandidates = onCall(
         skippedSentCount,
         skippedExistingExcludedCount,
         totalFoundCount: discovered.size,
+        eligibleFoundCount: eligibleDiscoveryCount,
+        pagesFetched,
+        extraPagesFetched,
         tags,
         tagSearchMode,
         runId,
@@ -366,3 +395,16 @@ export const syncCandidates = onCall(
     }
   },
 );
+
+async function resolveDiscoveryStatus(
+  xUserId: string,
+): Promise<{isExistingExcluded: boolean}> {
+  const [candidateSnapshot, excludedSnapshot] = await Promise.all([
+    db.doc(`candidates/${xUserId}`).get(),
+    db.doc(`excluded_accounts/${xUserId}`).get(),
+  ]);
+  const existing = candidateSnapshot.data() as CandidateData | undefined;
+  return {
+    isExistingExcluded: excludedSnapshot.exists || existing?.isExcluded === true,
+  };
+}

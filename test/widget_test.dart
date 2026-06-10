@@ -171,6 +171,7 @@ class _FakeCandidateFunctionsRepository
       updatedCount: 0,
       excludedCount: 0,
       skippedSentCount: 0,
+      skippedExistingExcludedCount: 0,
       totalFoundCount: 0,
       tags: [],
     );

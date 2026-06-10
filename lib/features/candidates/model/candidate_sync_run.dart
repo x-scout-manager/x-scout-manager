@@ -12,6 +12,7 @@ class CandidateSyncRun {
     this.createdCount = 0,
     this.updatedCount = 0,
     this.excludedCount = 0,
+    this.skippedExistingExcludedCount = 0,
     this.totalFoundCount = 0,
   });
 
@@ -25,6 +26,7 @@ class CandidateSyncRun {
   final int createdCount;
   final int updatedCount;
   final int excludedCount;
+  final int skippedExistingExcludedCount;
   final int totalFoundCount;
 
   bool get canRevert => status == 'completed';
@@ -65,6 +67,9 @@ class CandidateSyncRun {
       createdCount: _intValue(result['createdCount']),
       updatedCount: _intValue(result['updatedCount']),
       excludedCount: _intValue(result['excludedCount']),
+      skippedExistingExcludedCount: _intValue(
+        result['skippedExistingExcludedCount'],
+      ),
       totalFoundCount: _intValue(result['totalFoundCount']),
     );
   }

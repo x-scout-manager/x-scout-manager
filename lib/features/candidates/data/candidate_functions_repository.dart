@@ -8,6 +8,7 @@ class SyncCandidatesResult {
     required this.updatedCount,
     required this.excludedCount,
     required this.skippedSentCount,
+    required this.skippedExistingExcludedCount,
     required this.totalFoundCount,
     required this.tags,
     this.runId,
@@ -17,6 +18,7 @@ class SyncCandidatesResult {
   final int updatedCount;
   final int excludedCount;
   final int skippedSentCount;
+  final int skippedExistingExcludedCount;
   final int totalFoundCount;
   final List<String> tags;
   final String? runId;
@@ -27,6 +29,9 @@ class SyncCandidatesResult {
       updatedCount: _intValue(json['updatedCount']),
       excludedCount: _intValue(json['excludedCount']),
       skippedSentCount: _intValue(json['skippedSentCount']),
+      skippedExistingExcludedCount: _intValue(
+        json['skippedExistingExcludedCount'],
+      ),
       totalFoundCount: _intValue(json['totalFoundCount']),
       tags: json['tags'] is List
           ? (json['tags'] as List).whereType<String>().toList()

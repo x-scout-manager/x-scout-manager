@@ -225,8 +225,7 @@ class CandidateListVm extends ChangeNotifier {
       _state = _state.copyWith(
         isLoading: false,
         isSyncing: false,
-        noticeMessage:
-            '候補抽出が完了しました。新規${result.createdCount}件、更新${result.updatedCount}件、除外${result.excludedCount}件。',
+        noticeMessage: _syncNotice(result),
       );
       notifyListeners();
     } on AppError catch (error) {
@@ -244,6 +243,14 @@ class CandidateListVm extends ChangeNotifier {
       );
       notifyListeners();
     }
+  }
+
+  String _syncNotice(SyncCandidatesResult result) {
+    return '候補抽出が完了しました。'
+        '新規${result.createdCount}件、'
+        '更新${result.updatedCount}件、'
+        '除外${result.excludedCount}件、'
+        '除外済みでスキップ${result.skippedExistingExcludedCount}件。';
   }
 
   Future<void> revertSyncRun(String runId) async {

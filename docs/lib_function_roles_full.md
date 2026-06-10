@@ -89,7 +89,7 @@
 | `functions/src/shared/validators.ts` | 入力正規化、数値変換、タグ/文字列配列の共通バリデーション |
 | `functions/src/shared/errors.ts` | Functionsエラーをログ保存用payloadへ変換 |
 | `functions/src/x/x_search.ts` | X API Bearer Token取得、Recent Searchクエリ生成、X API検索通信 |
-| `functions/src/candidates/sync_candidates.ts` | タグ検索条件に応じたX API候補抽出とFirestore保存 |
+| `functions/src/candidates/sync_candidates.ts` | タグ検索条件に応じたX API候補抽出とFirestore保存。除外済みスキップが多い場合はページ上限内で追加取得し、抽出結果へ件数を返す |
 | `functions/src/candidates/revert_candidate_sync_run.ts` | 候補抽出run単位の解除処理。削除済み送信キューのみ紐づく候補は解除対象に含める |
 | `functions/src/candidates/cleanup_reverted_candidates.ts` | すべての抽出元runが解除済みの未送信候補を安全条件付きで再掃除。古い `lastSyncRunId` 欠落候補は送信履歴/有効キュー保護後にフォールバック判定する |
 | `functions/src/candidates/candidate_sync_run_repository.ts` | 抽出run解除用差分 `candidate_sync_runs/{runId}/changes` の保存 |
