@@ -75,7 +75,7 @@ class SendQueueState {
         return item;
       }
     }
-    return items.where((item) => item.isSendable).firstOrNull;
+    return _firstAutoSelectableItem(items);
   }
 
   DmTemplate? get selectedTemplate {
@@ -395,13 +395,21 @@ class SendQueueVm extends ChangeNotifier {
 
   String? _validSelectedItemId(List<SendQueueItem> items) {
     final selectedItemId = _state.selectedItemId;
-    final hasSelectedItem =
-        selectedItemId != null &&
-        items.any((item) => item.itemId == selectedItemId && item.isSendable);
-    if (hasSelectedItem) {
-      return selectedItemId;
+    if (selectedItemId != null) {
+      SendQueueItem? selectedItem;
+      for (final item in items) {
+        if (item.itemId == selectedItemId && item.isSendable) {
+          selectedItem = item;
+          break;
+        }
+      }
+      final hasPendingItem = items.any((item) => item.status == 'pending');
+      if (selectedItem != null &&
+          (selectedItem.status == 'pending' || !hasPendingItem)) {
+        return selectedItemId;
+      }
     }
-    return items.where((item) => item.isSendable).firstOrNull?.itemId;
+    return _firstAutoSelectableItem(items)?.itemId;
   }
 
   String? _validSelectedTemplateId(List<DmTemplate> templates) {
@@ -423,4 +431,18 @@ class SendQueueVm extends ChangeNotifier {
     _settingsSubscription.cancel();
     super.dispose();
   }
+}
+
+SendQueueItem? _firstAutoSelectableItem(List<SendQueueItem> items) {
+  for (final item in items) {
+    if (item.status == 'pending') {
+      return item;
+    }
+  }
+  for (final item in items) {
+    if (item.isSendable) {
+      return item;
+    }
+  }
+  return null;
 }

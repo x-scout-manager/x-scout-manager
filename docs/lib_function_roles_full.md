@@ -97,7 +97,8 @@
 | `functions/src/send_queue/delete_send_queue.ts` | 送信キューを論理削除し、一覧から非表示にするCallable定義 |
 | `functions/src/send_queue/send_direct_message.ts` | X APIで個別DMを送信し、送信履歴とキュー/候補状態を更新するCallable定義 |
 | `functions/src/send_queue/mark_as_manually_sent.ts` | 手動送信済み登録、送信履歴作成、キュー/候補状態更新 |
-| `functions/src/x/x_dm.ts` | X API DM送信リクエストとSecret Managerアクセストークン参照 |
+| `functions/src/x/x_dm.ts` | X API DM送信リクエスト、OAuth2 token取得、401時のrefresh再送制御 |
+| `functions/src/x/x_token_store.ts` | 送信元Xアカウントの最新OAuth2 tokenをFirestore `x_api_tokens/sender` に保存・取得するFunctions専用境界 |
 | `functions/src/exclusions/exclude_candidate.ts` | 候補の除外リスト登録と関連キュー明細の除外更新 |
 | `functions/src/exclusions/restore_candidate.ts` | 除外済み候補の復元 |
 | `functions/src/conversions/create_conversion.ts` | 送信履歴起点の成果記録作成 |

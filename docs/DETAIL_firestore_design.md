@@ -36,6 +36,7 @@ Xスカウト支援ツールで利用するFirestoreコレクション、ドキ�
 | templates | Firestore auto id |
 | conversions | Firestore auto id |
 | function_logs | Firestore auto id |
+| x_api_tokens | 固定ID `sender` |
 
 ### 2.3 状態値
 
@@ -380,7 +381,41 @@ Cloud Functions実行結果の簡易ログ。
 | errorMessage | string | - | エラー内容 |
 | createdAt | timestamp | ○ | 作成日時 |
 
-## 12. candidate_sync_runs
+## 12. x_api_tokens
+
+### パス
+
+```text
+x_api_tokens/sender
+```
+
+### 用途
+
+送信元Xアカウントの最新OAuth2 tokenをCloud Functionsが保持する。
+Firebase Secret Managerの `X_USER_ACCESS_TOKEN` / `X_USER_REFRESH_TOKEN` は初期投入・復旧用とし、通常運用ではこのドキュメントを優先して利用する。
+
+### フィールド
+
+| フィールド | 型 | 必須 | 内容 |
+|---|---|---|---|
+| accessToken | string | ○ | 最新アクセストークン |
+| refreshToken | string | ○ | 最新refresh token |
+| tokenType | string | - | X API token responseのtoken type |
+| scope | string | - | 付与scope |
+| expiresInSeconds | number | - | token responseのexpires_in |
+| expiresAt | timestamp | - | accessToken期限目安 |
+| source | string | ○ | `secret_seed / refresh` |
+| createdAt | timestamp | - | 初期保存日時 |
+| lastRefreshAt | timestamp | - | 最終refresh日時 |
+| updatedAt | timestamp | ○ | 最終更新日時 |
+
+### 保存方針
+
+- Cloud Functions専用の秘密情報保存領域とする
+- Flutter Webからのread/writeはFirestore Rulesで拒否する
+- 401時のrefreshで新しいrefresh tokenが返った場合は、このドキュメントを更新する
+
+## 13. candidate_sync_runs
 
 ### パス
 
@@ -435,7 +470,7 @@ X API候補抽出の実行単位と、解除用の差分を保存する。
 - 送信履歴または送信キューitemが存在する候補はスキップする
 - `lastSyncRunId` が対象runと異なる候補は後続抽出済みとしてスキップする
 
-## 13. インデックス方針
+## 14. インデックス方針
 
 初期MVPで想定する複合インデックスは以下。
 単一フィールドの昇順・降順検索はFirestoreの標準単一フィールドインデックスを利用する。
@@ -453,16 +488,16 @@ X API候補抽出の実行単位と、解除用の差分を保存する。
 | function_logs | `functionName asc, createdAt desc` | 実行ログ確認 |
 | candidate_sync_runs | `createdAt desc` | 候補抽出履歴 |
 
-## 14. Security Rules方針
+## 15. Security Rules方針
 
-### 14.1 基本方針
+### 15.1 基本方針
 
 - 未ログインユーザーは全拒否
 - `users/{uid}.role = admin` かつ `isActive = true` のユーザーのみ参照許可
 - 重要な作成・更新はCloud Functions経由に限定
 - クライアントから直接作成可能な範囲は、初期MVPでは最小にする
 
-### 14.2 クライアント直接操作の許可方針
+### 15.2 クライアント直接操作の許可方針
 
 | コレクション | read | create/update/delete |
 |---|---|---|
@@ -476,9 +511,10 @@ X API候補抽出の実行単位と、解除用の差分を保存する。
 | excluded_accounts | adminのみ | Functionsのみ |
 | conversions | adminのみ | Functionsのみ |
 | function_logs | adminのみ | Functionsのみ |
+| x_api_tokens | 不可 | Functionsのみ |
 | candidate_sync_runs | adminのみ | Functionsのみ |
 
-## 15. 未確定事項
+## 16. 未確定事項
 
 - Firestore Rulesを厳密にFunctions専用にするか、一部設定画面だけクライアント更新を許可するか
 - X API DM送信が利用可能な場合の送信失敗リトライ方針

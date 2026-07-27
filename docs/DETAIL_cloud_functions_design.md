@@ -286,7 +286,32 @@ X API DM送信ではSecret Managerの以下を利用する。
 | X_CLIENT_ID | X Developer AppのOAuth2 Client ID |
 | X_CLIENT_SECRET | X Developer AppのOAuth2 Client Secret |
 
-アクセストークンが期限切れで401になった場合は、refresh tokenでアクセストークンを再取得して1回だけDM送信を再試行する。
+`X_USER_ACCESS_TOKEN` と `X_USER_REFRESH_TOKEN` は初期投入・復旧用として扱う。
+通常運用では、Functionsが `x_api_tokens/sender` に保存した最新のOAuth2 tokenを優先して利用する。
+
+アクセストークンが期限切れで401になった場合は、Firestore上の最新tokenを再読込し、それでも401の場合のみrefresh tokenでアクセストークンを再取得して1回だけDM送信を再試行する。
+refresh結果に新しい `refresh_token` が含まれる場合は、`x_api_tokens/sender` に保存して次回以降の送信で利用する。
+
+### Token永続化
+
+| パス | 内容 |
+|---|---|
+| `x_api_tokens/sender` | 送信元Xアカウントの最新OAuth2 token |
+
+主なフィールド:
+
+| フィールド | 型 | 内容 |
+|---|---|---|
+| accessToken | string | 最新アクセストークン |
+| refreshToken | string | 最新refresh token |
+| tokenType | string | X API token responseのtoken type |
+| scope | string | 付与scope |
+| expiresInSeconds | number | token responseのexpires_in |
+| expiresAt | timestamp | accessToken期限目安 |
+| lastRefreshAt | timestamp | 最終refresh日時 |
+| updatedAt | timestamp | 最終更新日時 |
+
+`x_api_tokens` はCloud Functions専用の保存領域とし、Firestore Rulesではクライアントからのread/writeを拒否する。
 
 ### 重要
 

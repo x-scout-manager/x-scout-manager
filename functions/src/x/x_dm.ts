@@ -1,6 +1,13 @@
 import {HttpsError} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
 import {stringInput} from "../shared/validators";
+import {
+  loadSenderXToken,
+  loadStoredSenderXToken,
+  saveRefreshedSenderXToken,
+  type SenderXToken,
+  type XTokenRefreshResult,
+} from "./x_token_store";
 
 export const xUserAccessToken = defineSecret("X_USER_ACCESS_TOKEN");
 export const xUserRefreshToken = defineSecret("X_USER_REFRESH_TOKEN");
@@ -16,11 +23,35 @@ export async function sendXDirectMessage(
   recipientUserId: string,
   text: string,
 ): Promise<XDirectMessageResult> {
-  const token = userAccessToken();
-  let response = await postDirectMessage(recipientUserId, text, token);
+  let token = await senderToken();
+  let response = await postDirectMessage(
+    recipientUserId,
+    text,
+    token.accessToken,
+  );
   if (response.status === 401) {
-    const refreshedToken = await refreshUserAccessToken();
-    response = await postDirectMessage(recipientUserId, text, refreshedToken);
+    const latestToken = await loadStoredSenderXToken();
+    if (latestToken && latestToken.accessToken !== token.accessToken) {
+      token = latestToken;
+      response = await postDirectMessage(
+        recipientUserId,
+        text,
+        token.accessToken,
+      );
+    }
+  }
+
+  if (response.status === 401) {
+    const refreshResult = await refreshUserAccessToken(token.refreshToken);
+    token = await saveRefreshedSenderXToken(
+      token.refreshToken,
+      refreshResult,
+    );
+    response = await postDirectMessage(
+      recipientUserId,
+      text,
+      token.accessToken,
+    );
   }
 
   const responseText = await response.text();
@@ -47,15 +78,24 @@ export async function sendXDirectMessage(
   return {dmConversationId, dmEventId};
 }
 
-function userAccessToken(): string {
-  const token = xUserAccessToken.value() || process.env.X_USER_ACCESS_TOKEN;
-  if (!token) {
+async function senderToken(): Promise<SenderXToken> {
+  const accessToken =
+    xUserAccessToken.value() || process.env.X_USER_ACCESS_TOKEN || "";
+  const refreshToken =
+    xUserRefreshToken.value() || process.env.X_USER_REFRESH_TOKEN || "";
+  return loadSenderXToken({accessToken, refreshToken});
+}
+
+function clientCredentials(): {clientId: string; clientSecret: string} {
+  const clientId = xClientId.value() || process.env.X_CLIENT_ID;
+  const clientSecret = xClientSecret.value() || process.env.X_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
     throw new HttpsError(
-      "failed-precondition",
-      "X_USER_ACCESS_TOKEN が設定されていません。",
+      "unauthenticated",
+      "X API Client情報が設定されていません。Client IDとClient SecretをSecretへ設定してください。",
     );
   }
-  return token;
+  return {clientId, clientSecret};
 }
 
 async function postDirectMessage(
@@ -76,11 +116,10 @@ async function postDirectMessage(
   );
 }
 
-async function refreshUserAccessToken(): Promise<string> {
-  const refreshToken =
-    xUserRefreshToken.value() || process.env.X_USER_REFRESH_TOKEN;
-  const clientId = xClientId.value() || process.env.X_CLIENT_ID;
-  const clientSecret = xClientSecret.value() || process.env.X_CLIENT_SECRET;
+async function refreshUserAccessToken(
+  refreshToken: string,
+): Promise<XTokenRefreshResult> {
+  const {clientId, clientSecret} = clientCredentials();
   if (!refreshToken || !clientId || !clientSecret) {
     throw new HttpsError(
       "unauthenticated",
@@ -114,13 +153,23 @@ async function refreshUserAccessToken(): Promise<string> {
   }
 
   const accessToken = stringInput(mapRecord(responseBody)?.access_token);
+  const nextRefreshToken = stringInput(mapRecord(responseBody)?.refresh_token);
+  const tokenType = stringInput(mapRecord(responseBody)?.token_type);
+  const scope = stringInput(mapRecord(responseBody)?.scope);
+  const expiresIn = mapRecord(responseBody)?.expires_in;
   if (!accessToken) {
     throw new HttpsError(
       "internal",
       "X APIアクセストークン更新結果を確認できませんでした。",
     );
   }
-  return accessToken;
+  return {
+    accessToken,
+    refreshToken: nextRefreshToken || undefined,
+    tokenType: tokenType || undefined,
+    scope: scope || undefined,
+    expiresInSeconds: typeof expiresIn === "number" ? expiresIn : undefined,
+  };
 }
 
 function basicCredential(clientId: string, clientSecret: string): string {
