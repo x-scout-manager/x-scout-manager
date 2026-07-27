@@ -8,6 +8,7 @@ import 'package:x_scout_manager/features/auth/model/app_user.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_repository.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_functions_repository.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate.dart';
+import 'package:x_scout_manager/features/candidates/model/candidate_page.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate_sync_run.dart';
 import 'package:x_scout_manager/features/conversions/data/conversion_functions_repository.dart';
 import 'package:x_scout_manager/features/conversions/data/conversion_repository.dart';
@@ -138,8 +139,11 @@ class _FakeTemplateRepository implements TemplateRepository {
 
 class _FakeCandidateRepository implements CandidateRepository {
   @override
-  Stream<List<Candidate>> watchCandidates() {
-    return Stream.value(const []);
+  Future<CandidatePage> loadCandidatePage({
+    CandidatePageCursor? startAfter,
+    int pageSize = 50,
+  }) async {
+    return const CandidatePage(candidates: [], nextCursor: null);
   }
 
   @override

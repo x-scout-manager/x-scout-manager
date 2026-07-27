@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'candidate_repository.dart';
 import '../model/candidate.dart';
+import '../model/candidate_page.dart';
 import '../model/candidate_sync_run.dart';
 
 class FirestoreCandidateRepository implements CandidateRepository {
@@ -17,16 +18,48 @@ class FirestoreCandidateRepository implements CandidateRepository {
       _firestore.collection('candidate_sync_runs');
 
   @override
-  Stream<List<Candidate>> watchCandidates() {
-    return _collection
+  Future<CandidatePage> loadCandidatePage({
+    CandidatePageCursor? startAfter,
+    int pageSize = 50,
+  }) async {
+    final effectivePageSize = pageSize.clamp(1, 100);
+    Query<Map<String, dynamic>> query = _collection
         .orderBy('status')
         .orderBy('updatedAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => Candidate.fromJson(doc.id, doc.data()))
-              .toList();
-        });
+        .orderBy(FieldPath.documentId, descending: true);
+    if (startAfter != null) {
+      query = query.startAfter([
+        startAfter.status,
+        Timestamp.fromDate(startAfter.updatedAt),
+        startAfter.candidateId,
+      ]);
+    }
+
+    final snapshot = await query.limit(effectivePageSize + 1).get();
+    final visibleDocs = snapshot.docs.take(effectivePageSize).toList();
+    final hasNextPage = snapshot.docs.length > effectivePageSize;
+    CandidatePageCursor? nextCursor;
+    if (hasNextPage && visibleDocs.isNotEmpty) {
+      final lastDoc = visibleDocs.last;
+      final data = lastDoc.data();
+      final updatedAt = data['updatedAt'];
+      nextCursor = CandidatePageCursor(
+        candidateId: lastDoc.id,
+        status: data['status'] is String
+            ? data['status'] as String
+            : 'candidate',
+        updatedAt: updatedAt is Timestamp
+            ? updatedAt.toDate()
+            : DateTime.fromMillisecondsSinceEpoch(0),
+      );
+    }
+
+    return CandidatePage(
+      candidates: visibleDocs
+          .map((doc) => Candidate.fromJson(doc.id, doc.data()))
+          .toList(),
+      nextCursor: nextCursor,
+    );
   }
 
   @override

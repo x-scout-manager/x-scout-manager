@@ -13,7 +13,7 @@ import '../../features/candidates/data/firestore_candidate_repository.dart';
 import '../../features/candidates/usecase/cleanup_reverted_candidates.dart';
 import '../../features/candidates/usecase/exclude_candidate.dart';
 import '../../features/candidates/usecase/load_candidate_sync_runs.dart';
-import '../../features/candidates/usecase/load_candidates.dart';
+import '../../features/candidates/usecase/load_candidate_page.dart';
 import '../../features/candidates/usecase/revert_candidate_sync_run.dart';
 import '../../features/candidates/usecase/restore_candidate.dart';
 import '../../features/candidates/usecase/sync_candidates.dart';
@@ -137,7 +137,8 @@ class AppDependencies {
 
   SaveTemplate get saveTemplate => SaveTemplate(templateRepository);
 
-  LoadCandidates get loadCandidates => LoadCandidates(candidateRepository);
+  LoadCandidatePage get loadCandidatePage =>
+      LoadCandidatePage(candidateRepository);
 
   LoadCandidateSyncRuns get loadCandidateSyncRuns =>
       LoadCandidateSyncRuns(candidateRepository);

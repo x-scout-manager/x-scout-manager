@@ -120,13 +120,14 @@ lib/
     candidates/
       model/
         candidate.dart
+        candidate_page.dart
         candidate_status.dart
       data/
         candidate_repository.dart
         firestore_candidate_repository.dart
         candidate_functions_repository.dart
       usecase/
-        load_candidates.dart
+        load_candidate_page.dart
         sync_candidates.dart
         exclude_candidate.dart
         restore_candidate.dart

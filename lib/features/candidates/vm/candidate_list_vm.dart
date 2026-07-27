@@ -8,11 +8,12 @@ import '../../settings/usecase/load_scout_settings.dart';
 import '../../settings/usecase/save_scout_settings.dart';
 import '../data/candidate_functions_repository.dart';
 import '../model/candidate.dart';
+import '../model/candidate_page.dart';
 import '../model/candidate_sync_run.dart';
 import '../usecase/cleanup_reverted_candidates.dart';
+import '../usecase/load_candidate_page.dart';
 import '../usecase/load_candidate_sync_runs.dart';
 import '../usecase/revert_candidate_sync_run.dart';
-import '../usecase/load_candidates.dart';
 import '../usecase/sync_candidates.dart';
 import '../../send_queue/usecase/create_send_queue.dart';
 
@@ -26,6 +27,9 @@ class CandidateListState {
     this.isRevertingSyncRun = false,
     this.isCleaningRevertedCandidates = false,
     this.isSavingSearchMode = false,
+    this.isLoadingPage = false,
+    this.pageNumber = 1,
+    this.hasNextPage = false,
     this.settings = ScoutSettings.defaults,
     this.syncRuns = const [],
     this.errorMessage,
@@ -40,6 +44,9 @@ class CandidateListState {
   final bool isRevertingSyncRun;
   final bool isCleaningRevertedCandidates;
   final bool isSavingSearchMode;
+  final bool isLoadingPage;
+  final int pageNumber;
+  final bool hasNextPage;
   final ScoutSettings settings;
   final List<CandidateSyncRun> syncRuns;
   final String? errorMessage;
@@ -54,6 +61,9 @@ class CandidateListState {
     bool? isRevertingSyncRun,
     bool? isCleaningRevertedCandidates,
     bool? isSavingSearchMode,
+    bool? isLoadingPage,
+    int? pageNumber,
+    bool? hasNextPage,
     ScoutSettings? settings,
     List<CandidateSyncRun>? syncRuns,
     String? errorMessage,
@@ -71,6 +81,9 @@ class CandidateListState {
       isCleaningRevertedCandidates:
           isCleaningRevertedCandidates ?? this.isCleaningRevertedCandidates,
       isSavingSearchMode: isSavingSearchMode ?? this.isSavingSearchMode,
+      isLoadingPage: isLoadingPage ?? this.isLoadingPage,
+      pageNumber: pageNumber ?? this.pageNumber,
+      hasNextPage: hasNextPage ?? this.hasNextPage,
       settings: settings ?? this.settings,
       syncRuns: syncRuns ?? this.syncRuns,
       errorMessage: clearErrorMessage
@@ -85,7 +98,7 @@ class CandidateListState {
 
 class CandidateListVm extends ChangeNotifier {
   CandidateListVm(
-    this._loadCandidates,
+    this._loadCandidatePage,
     this._createSendQueue,
     this._syncCandidates,
     this._loadCandidateSyncRuns,
@@ -94,31 +107,12 @@ class CandidateListVm extends ChangeNotifier {
     this._loadScoutSettings,
     this._saveScoutSettings,
   ) {
-    _candidateSubscription = _loadCandidates().listen(
-      (candidates) {
-        final candidateIds = candidates
-            .map((candidate) => candidate.candidateId)
-            .toSet();
-        _state = _state.copyWith(
-          candidates: candidates,
-          selectedCandidateIds: _state.selectedCandidateIds
-              .where(candidateIds.contains)
-              .toSet(),
-          isLoading: false,
-          clearErrorMessage: true,
-        );
-        notifyListeners();
-      },
-      onError: (_) {
-        _state = _state.copyWith(
-          isLoading: false,
-          errorMessage: '候補一覧の読み込みに失敗しました。',
-        );
-        notifyListeners();
-      },
-    );
+    unawaited(_loadPage(0));
     _settingsSubscription = _loadScoutSettings().listen(
       (settings) {
+        if (_isDisposed) {
+          return;
+        }
         _state = _state.copyWith(
           settings: settings ?? ScoutSettings.defaults,
           clearErrorMessage: true,
@@ -126,23 +120,34 @@ class CandidateListVm extends ChangeNotifier {
         notifyListeners();
       },
       onError: (_) {
+        if (_isDisposed) {
+          return;
+        }
         _state = _state.copyWith(errorMessage: '抽出設定の読み込みに失敗しました。');
         notifyListeners();
       },
     );
     _syncRunsSubscription = _loadCandidateSyncRuns().listen(
       (runs) {
+        if (_isDisposed) {
+          return;
+        }
         _state = _state.copyWith(syncRuns: runs);
         notifyListeners();
       },
       onError: (_) {
+        if (_isDisposed) {
+          return;
+        }
         _state = _state.copyWith(errorMessage: '抽出履歴の読み込みに失敗しました。');
         notifyListeners();
       },
     );
   }
 
-  final LoadCandidates _loadCandidates;
+  static const pageSize = 50;
+
+  final LoadCandidatePage _loadCandidatePage;
   final CreateSendQueue _createSendQueue;
   final SyncCandidates _syncCandidates;
   final LoadCandidateSyncRuns _loadCandidateSyncRuns;
@@ -150,13 +155,90 @@ class CandidateListVm extends ChangeNotifier {
   final CleanupRevertedCandidates _cleanupRevertedCandidates;
   final LoadScoutSettings _loadScoutSettings;
   final SaveScoutSettings _saveScoutSettings;
-  late final StreamSubscription _candidateSubscription;
   late final StreamSubscription _settingsSubscription;
   late final StreamSubscription _syncRunsSubscription;
+  final List<CandidatePageCursor?> _pageCursors = [null];
+  bool _isDisposed = false;
 
   CandidateListState _state = const CandidateListState();
 
   CandidateListState get state => _state;
+
+  bool get canGoToPreviousPage =>
+      _state.pageNumber > 1 && !_state.isLoadingPage;
+
+  bool get canGoToNextPage => _state.hasNextPage && !_state.isLoadingPage;
+
+  Future<void> goToPreviousPage() async {
+    if (!canGoToPreviousPage) {
+      return;
+    }
+    await _loadPage(_state.pageNumber - 2);
+  }
+
+  Future<void> goToNextPage() async {
+    if (!canGoToNextPage) {
+      return;
+    }
+    await _loadPage(_state.pageNumber);
+  }
+
+  Future<void> refreshFirstPage() async {
+    _pageCursors
+      ..clear()
+      ..add(null);
+    await _loadPage(0);
+  }
+
+  Future<void> _loadPage(int pageIndex) async {
+    if (_state.isLoadingPage ||
+        pageIndex < 0 ||
+        pageIndex >= _pageCursors.length) {
+      return;
+    }
+
+    _state = _state.copyWith(isLoadingPage: true, clearErrorMessage: true);
+    notifyListeners();
+
+    try {
+      final page = await _loadCandidatePage(
+        startAfter: _pageCursors[pageIndex],
+        pageSize: pageSize,
+      );
+      if (_isDisposed) {
+        return;
+      }
+      _setNextPageCursor(pageIndex, page.nextCursor);
+      _state = _state.copyWith(
+        candidates: page.candidates,
+        isLoading: false,
+        isLoadingPage: false,
+        pageNumber: pageIndex + 1,
+        hasNextPage: page.hasNextPage,
+      );
+      notifyListeners();
+    } catch (_) {
+      if (_isDisposed) {
+        return;
+      }
+      _state = _state.copyWith(
+        isLoading: false,
+        isLoadingPage: false,
+        errorMessage: '候補一覧の読み込みに失敗しました。',
+      );
+      notifyListeners();
+    }
+  }
+
+  void _setNextPageCursor(int pageIndex, CandidatePageCursor? nextCursor) {
+    final nextIndex = pageIndex + 1;
+    if (_pageCursors.length > nextIndex) {
+      _pageCursors.removeRange(nextIndex, _pageCursors.length);
+    }
+    if (nextCursor != null) {
+      _pageCursors.add(nextCursor);
+    }
+  }
 
   void toggleSelection(Candidate candidate, bool selected) {
     if (!candidate.canSend) {
@@ -228,6 +310,7 @@ class CandidateListVm extends ChangeNotifier {
         noticeMessage: _syncNotice(result),
       );
       notifyListeners();
+      await refreshFirstPage();
     } on AppError catch (error) {
       _state = _state.copyWith(
         isLoading: false,
@@ -273,6 +356,7 @@ class CandidateListVm extends ChangeNotifier {
             '抽出を解除しました。復元${result.revertedCount}件、削除${result.deletedCount}件、スキップ${result.skippedCount}件。',
       );
       notifyListeners();
+      await refreshFirstPage();
     } on AppError catch (error) {
       _state = _state.copyWith(
         isRevertingSyncRun: false,
@@ -307,6 +391,7 @@ class CandidateListVm extends ChangeNotifier {
         noticeMessage: _cleanupNotice(result),
       );
       notifyListeners();
+      await refreshFirstPage();
     } on AppError catch (error) {
       _state = _state.copyWith(
         isCleaningRevertedCandidates: false,
@@ -398,7 +483,7 @@ class CandidateListVm extends ChangeNotifier {
 
   @override
   void dispose() {
-    _candidateSubscription.cancel();
+    _isDisposed = true;
     _settingsSubscription.cancel();
     _syncRunsSubscription.cancel();
     super.dispose();

@@ -2,11 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_functions_repository.dart';
 import 'package:x_scout_manager/features/candidates/data/candidate_repository.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate.dart';
+import 'package:x_scout_manager/features/candidates/model/candidate_page.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate_status.dart';
 import 'package:x_scout_manager/features/candidates/model/candidate_sync_run.dart';
 import 'package:x_scout_manager/features/candidates/usecase/cleanup_reverted_candidates.dart';
 import 'package:x_scout_manager/features/candidates/usecase/load_candidate_sync_runs.dart';
-import 'package:x_scout_manager/features/candidates/usecase/load_candidates.dart';
+import 'package:x_scout_manager/features/candidates/usecase/load_candidate_page.dart';
 import 'package:x_scout_manager/features/candidates/usecase/revert_candidate_sync_run.dart';
 import 'package:x_scout_manager/features/candidates/usecase/sync_candidates.dart';
 import 'package:x_scout_manager/features/candidates/vm/candidate_list_vm.dart';
@@ -49,21 +50,92 @@ void main() {
     expect(vm.state.selectedCandidateIds, isEmpty);
     expect(vm.state.noticeMessage, '送信キューを作成しました。');
   });
+
+  test('50件単位で次ページを取得しページをまたいで選択を維持する', () async {
+    final firstPageCandidates = [
+      _candidate('candidate-a'),
+      _candidate('candidate-b'),
+    ];
+    final secondPageCandidates = [_candidate('candidate-c')];
+    final candidateRepository = _FakeCandidateRepository.pages([
+      firstPageCandidates,
+      secondPageCandidates,
+    ]);
+    final sendQueueRepository = _RecordingSendQueueFunctionsRepository();
+    final vm = _createVm(
+      candidates: const [],
+      candidateRepository: candidateRepository,
+      sendQueueFunctionsRepository: sendQueueRepository,
+    );
+    addTearDown(vm.dispose);
+
+    await Future<void>.delayed(Duration.zero);
+
+    expect(vm.state.candidates, firstPageCandidates);
+    expect(vm.state.pageNumber, 1);
+    expect(vm.state.hasNextPage, isTrue);
+    expect(candidateRepository.requestedPageSizes, [50]);
+
+    vm.toggleSelection(firstPageCandidates.first, true);
+    await vm.goToNextPage();
+
+    expect(vm.state.candidates, secondPageCandidates);
+    expect(vm.state.pageNumber, 2);
+    expect(vm.state.hasNextPage, isFalse);
+    expect(vm.state.selectedCandidateIds, {'candidate-a'});
+    expect(candidateRepository.requestedPageSizes, [50, 50]);
+
+    await vm.goToPreviousPage();
+
+    expect(vm.state.candidates, firstPageCandidates);
+    expect(vm.state.pageNumber, 1);
+    expect(vm.state.selectedCandidateIds, {'candidate-a'});
+  });
+
+  test('候補抽出後に先頭ページを再取得する', () async {
+    final candidateRepository = _FakeCandidateRepository.pages([
+      [_candidate('candidate-a')],
+      [_candidate('candidate-b')],
+    ]);
+    final vm = _createVm(
+      candidates: const [],
+      candidateRepository: candidateRepository,
+      sendQueueFunctionsRepository: _RecordingSendQueueFunctionsRepository(),
+    );
+    addTearDown(vm.dispose);
+
+    await Future<void>.delayed(Duration.zero);
+    await vm.goToNextPage();
+
+    expect(vm.state.pageNumber, 2);
+
+    await vm.syncCandidates();
+
+    expect(vm.state.pageNumber, 1);
+    expect(vm.state.candidates.single.candidateId, 'candidate-a');
+    expect(candidateRepository.requestedStartAfterIds, [
+      null,
+      'candidate-a',
+      null,
+    ]);
+  });
 }
 
 CandidateListVm _createVm({
   required List<Candidate> candidates,
+  CandidateRepository? candidateRepository,
   required SendQueueFunctionsRepository sendQueueFunctionsRepository,
 }) {
-  final candidateRepository = _FakeCandidateRepository(candidates);
+  final resolvedCandidateRepository =
+      candidateRepository ?? _FakeCandidateRepository(candidates);
   final candidateFunctionsRepository = _FakeCandidateFunctionsRepository();
   final settingsRepository = _FakeSettingsRepository();
 
   return CandidateListVm(
-    LoadCandidates(candidateRepository),
+    LoadCandidatePage(resolvedCandidateRepository),
     CreateSendQueue(sendQueueFunctionsRepository),
     SyncCandidates(candidateFunctionsRepository),
-    LoadCandidateSyncRuns(candidateRepository),
+    LoadCandidateSyncRuns(resolvedCandidateRepository),
     RevertCandidateSyncRun(candidateFunctionsRepository),
     CleanupRevertedCandidates(candidateFunctionsRepository),
     LoadScoutSettings(settingsRepository),
@@ -89,13 +161,37 @@ Candidate _candidate(
 }
 
 class _FakeCandidateRepository implements CandidateRepository {
-  const _FakeCandidateRepository(this._candidates);
+  _FakeCandidateRepository(List<Candidate> candidates) : _pages = [candidates];
 
-  final List<Candidate> _candidates;
+  _FakeCandidateRepository.pages(this._pages);
+
+  final List<List<Candidate>> _pages;
+  final Map<String, int> _pageIndexByCursorId = {};
+  final List<int> requestedPageSizes = [];
+  final List<String?> requestedStartAfterIds = [];
 
   @override
-  Stream<List<Candidate>> watchCandidates() {
-    return Stream.value(_candidates);
+  Future<CandidatePage> loadCandidatePage({
+    CandidatePageCursor? startAfter,
+    int pageSize = 50,
+  }) async {
+    requestedPageSizes.add(pageSize);
+    requestedStartAfterIds.add(startAfter?.candidateId);
+    final pageIndex = startAfter == null
+        ? 0
+        : _pageIndexByCursorId[startAfter.candidateId] ?? 0;
+    final candidates = _pages[pageIndex];
+    CandidatePageCursor? nextCursor;
+    if (pageIndex + 1 < _pages.length && candidates.isNotEmpty) {
+      final lastCandidate = candidates.last;
+      _pageIndexByCursorId[lastCandidate.candidateId] = pageIndex + 1;
+      nextCursor = CandidatePageCursor(
+        candidateId: lastCandidate.candidateId,
+        status: lastCandidate.status.name,
+        updatedAt: DateTime(2026),
+      );
+    }
+    return CandidatePage(candidates: candidates, nextCursor: nextCursor);
   }
 
   @override

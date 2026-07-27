@@ -60,10 +60,16 @@
 | `lib/features/conversions/vm/conversion_list_vm.dart` | 成果一覧の読込、ローディング、エラー状態を管理 |
 | `lib/features/conversions/vm/conversion_form_vm.dart` | 成約記録フォームの送信履歴選択、売上、登録状態を管理 |
 | `lib/features/conversions/view/pages/conversion_list_page.dart` | 初期運用では非表示の成果記録画面 |
+| `lib/features/candidates/model/candidate_page.dart` | 候補一覧の1ページ分データとFirestore非依存のページカーソル |
+| `lib/features/candidates/data/firestore_candidate_repository.dart` | Firestore `candidates` を50件単位のカーソル方式で取得し、次ページ有無を判定 |
 | `lib/features/candidates/data/candidate_functions_repository.dart` | 候補除外/復元など候補系Callable Functionsの呼び出し境界 |
+| `lib/features/candidates/usecase/load_candidate_page.dart` | 候補一覧のページ取得をRepositoryへ委譲するUseCase |
 | `lib/features/candidates/usecase/exclude_candidate.dart` | 候補を除外リストへ追加するUseCase |
 | `lib/features/candidates/usecase/restore_candidate.dart` | 候補を除外リストから復元するUseCase |
+| `lib/features/candidates/vm/candidate_list_vm.dart` | 候補ページ、ページカーソル履歴、複数ページにまたがる選択状態、候補抽出操作を管理 |
 | `lib/features/candidates/vm/candidate_detail_vm.dart` | 候補詳細の読込、除外、復元、エラー表示状態を管理 |
+| `lib/features/candidates/view/pages/candidate_list_page.dart` | 候補一覧操作、抽出履歴、ページ移動を遅延構築一覧へ接続する画面 |
+| `lib/features/candidates/view/widgets/candidate_table.dart` | 表示中ページの候補行だけをSliverListで遅延構築する一覧Widget |
 | `lib/features/candidates/view/pages/candidate_detail_page.dart` | 候補詳細表示と除外/復元操作のUI |
 | `lib/features/exclusions/model/excluded_account.dart` | `excluded_accounts` の表示用モデルとFirestore変換 |
 | `lib/features/exclusions/data/firestore_exclusion_repository.dart` | 除外アカウント一覧と除外キーワード設定のFirestore接続 |

@@ -19,25 +19,26 @@ class CandidateTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (candidates.isEmpty) {
-      return const Center(child: Text('候補データは未取得です'));
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 32),
+          child: Center(child: Text('候補データは未取得です')),
+        ),
+      );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('選択')),
-          DataColumn(label: Text('ユーザー名')),
-          DataColumn(label: Text('表示名')),
-          DataColumn(label: Text('ステータス')),
-          DataColumn(label: Text('タグ')),
-          DataColumn(label: Text('送信可否')),
-          DataColumn(label: Text('操作')),
-        ],
-        rows: candidates.map((candidate) {
-          return DataRow(
-            cells: [
-              DataCell(
+    return SliverList.separated(
+      itemCount: candidates.length,
+      itemBuilder: (context, index) {
+        final candidate = candidates[index];
+        return Card(
+          key: ValueKey(candidate.candidateId),
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
                 Checkbox(
                   value: selectedCandidateIds.contains(candidate.candidateId),
                   onChanged: candidate.canSend
@@ -46,13 +47,50 @@ class CandidateTable extends StatelessWidget {
                         }
                       : null,
                 ),
-              ),
-              DataCell(Text('@${candidate.username}')),
-              DataCell(Text(candidate.displayName ?? '-')),
-              DataCell(CandidateStatusBadge(status: candidate.status)),
-              DataCell(Text(candidate.sourceTags.join(', '))),
-              DataCell(Text(candidate.canSend ? '可' : '不可')),
-              DataCell(
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            candidate.displayName ?? '-',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          Text(
+                            '@${candidate.username}',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                          CandidateStatusBadge(status: candidate.status),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 4,
+                        children: [
+                          Text(
+                            candidate.sourceTags.isEmpty
+                                ? 'タグ: -'
+                                : 'タグ: ${candidate.sourceTags.join(', ')}',
+                          ),
+                          Text('送信: ${candidate.canSend ? '可' : '不可'}'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
                 TextButton(
                   onPressed: () => Navigator.of(context).pushNamed(
                     RoutePaths.candidateDetail,
@@ -60,11 +98,12 @@ class CandidateTable extends StatelessWidget {
                   ),
                   child: const Text('詳細'),
                 ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
     );
   }
 }

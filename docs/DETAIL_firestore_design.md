@@ -477,7 +477,7 @@ X API候補抽出の実行単位と、解除用の差分を保存する。
 
 | コレクション | クエリ | 用途 |
 |---|---|---|
-| candidates | `status asc, updatedAt desc` | 候補一覧 |
+| candidates | `status asc, updatedAt desc, documentId desc` | 候補一覧。50件表示と次ページ判定用1件をカーソル方式で取得 |
 | candidates | `isExcluded asc, isSent asc, lastFoundAt desc` | 送信対象候補抽出 |
 | candidates | `sourceTags array-contains, lastFoundAt desc` | タグ別確認 |
 | send_histories | `xUserId asc, sentAt desc` | 既送信確認 |

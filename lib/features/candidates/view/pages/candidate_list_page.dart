@@ -13,37 +13,38 @@ class CandidateListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dependencies = AppProviders.of(context);
-    return AppScaffold(
-      title: '候補一覧',
-      body: _CandidateListBody(
-        vm: CandidateListVm(
-          dependencies.loadCandidates,
-          dependencies.createSendQueue,
-          dependencies.syncCandidates,
-          dependencies.loadCandidateSyncRuns,
-          dependencies.revertCandidateSyncRun,
-          dependencies.cleanupRevertedCandidates,
-          dependencies.loadScoutSettings,
-          dependencies.saveScoutSettings,
-        ),
-      ),
-    );
+    return AppScaffold(title: '候補一覧', body: const _CandidateListBody());
   }
 }
 
 class _CandidateListBody extends StatefulWidget {
-  const _CandidateListBody({required this.vm});
-
-  final CandidateListVm vm;
+  const _CandidateListBody();
 
   @override
   State<_CandidateListBody> createState() => _CandidateListBodyState();
 }
 
 class _CandidateListBodyState extends State<_CandidateListBody> {
+  late final CandidateListVm _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    final dependencies = AppProviders.read(context);
+    _vm = CandidateListVm(
+      dependencies.loadCandidatePage,
+      dependencies.createSendQueue,
+      dependencies.syncCandidates,
+      dependencies.loadCandidateSyncRuns,
+      dependencies.revertCandidateSyncRun,
+      dependencies.cleanupRevertedCandidates,
+      dependencies.loadScoutSettings,
+      dependencies.saveScoutSettings,
+    );
+  }
+
   Future<void> _createQueue() async {
-    final queueId = await widget.vm.createQueue();
+    final queueId = await _vm.createQueue();
     if (queueId == null || !mounted) {
       return;
     }
@@ -75,7 +76,7 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
       },
     );
     if (confirmed == true) {
-      await widget.vm.revertSyncRun(run.runId);
+      await _vm.revertSyncRun(run.runId);
     }
   }
 
@@ -102,114 +103,193 @@ class _CandidateListBodyState extends State<_CandidateListBody> {
       },
     );
     if (confirmed == true) {
-      await widget.vm.cleanupRevertedCandidates();
+      await _vm.cleanupRevertedCandidates();
     }
   }
 
   @override
   void dispose() {
-    widget.vm.dispose();
+    _vm.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: widget.vm,
+      listenable: _vm,
       builder: (context, _) {
-        final state = widget.vm.state;
+        final state = _vm.state;
         if (state.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 260,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'タグ検索モード',
-                        isDense: true,
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<TagSearchMode>(
-                          value: state.settings.tagSearchMode,
-                          isDense: true,
-                          isExpanded: true,
-                          items: TagSearchMode.values
-                              .map(
-                                (mode) => DropdownMenuItem(
-                                  value: mode,
-                                  child: Text(mode.label),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: state.isSavingSearchMode || state.isSyncing
+        return CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 260,
+                          child: InputDecorator(
+                            decoration: const InputDecoration(
+                              labelText: 'タグ検索モード',
+                              isDense: true,
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<TagSearchMode>(
+                                value: state.settings.tagSearchMode,
+                                isDense: true,
+                                isExpanded: true,
+                                items: TagSearchMode.values
+                                    .map(
+                                      (mode) => DropdownMenuItem(
+                                        value: mode,
+                                        child: Text(mode.label),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged:
+                                    state.isSavingSearchMode || state.isSyncing
+                                    ? null
+                                    : (mode) {
+                                        if (mode != null) {
+                                          _vm.changeTagSearchMode(mode);
+                                        }
+                                      },
+                              ),
+                            ),
+                          ),
+                        ),
+                        FilledButton(
+                          onPressed: state.isCreatingQueue
                               ? null
-                              : (mode) {
-                                  if (mode != null) {
-                                    widget.vm.changeTagSearchMode(mode);
-                                  }
-                                },
+                              : _createQueue,
+                          child: Text(
+                            state.isCreatingQueue
+                                ? '作成中'
+                                : '送信キューに追加 (${state.selectedCandidateIds.length})',
+                          ),
+                        ),
+                        OutlinedButton(
+                          onPressed: state.isSyncing
+                              ? null
+                              : _vm.syncCandidates,
+                          child: Text(state.isSyncing ? '抽出中' : 'X API候補抽出'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: state.isLoadingPage
+                              ? null
+                              : _vm.refreshFirstPage,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('一覧を更新'),
+                        ),
+                        const Text('送信可能な候補のみ選択できます。'),
+                      ],
+                    ),
+                    if (state.isLoadingPage) ...[
+                      const SizedBox(height: 12),
+                      const LinearProgressIndicator(),
+                    ],
+                    if (state.errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        state.errorMessage!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: state.isCreatingQueue ? null : _createQueue,
-                    child: Text(
-                      state.isCreatingQueue
-                          ? '作成中'
-                          : '送信キューに追加 (${state.selectedCandidateIds.length})',
-                    ),
-                  ),
-                  OutlinedButton(
-                    onPressed: state.isSyncing
-                        ? null
-                        : widget.vm.syncCandidates,
-                    child: Text(state.isSyncing ? '抽出中' : 'X API候補抽出'),
-                  ),
-                  const Text('送信可能な候補のみ選択できます。'),
-                ],
+                    ],
+                    if (state.noticeMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Text(state.noticeMessage!),
+                    ],
+                    if (state.syncRuns.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      _SyncRunPanel(
+                        runs: state.syncRuns,
+                        isReverting: state.isRevertingSyncRun,
+                        isCleaning: state.isCleaningRevertedCandidates,
+                        onRevert: _confirmRevert,
+                        onCleanup: _confirmCleanupRevertedCandidates,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                  ],
+                ),
               ),
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  state.errorMessage!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ],
-              if (state.noticeMessage != null) ...[
-                const SizedBox(height: 16),
-                Text(state.noticeMessage!),
-              ],
-              if (state.syncRuns.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                _SyncRunPanel(
-                  runs: state.syncRuns,
-                  isReverting: state.isRevertingSyncRun,
-                  isCleaning: state.isCleaningRevertedCandidates,
-                  onRevert: _confirmRevert,
-                  onCleanup: _confirmCleanupRevertedCandidates,
-                ),
-              ],
-              const SizedBox(height: 24),
-              CandidateTable(
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: CandidateTable(
                 candidates: state.candidates,
                 selectedCandidateIds: state.selectedCandidateIds,
-                onSelectionChanged: widget.vm.toggleSelection,
+                onSelectionChanged: _vm.toggleSelection,
               ),
-            ],
-          ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              sliver: SliverToBoxAdapter(
+                child: _CandidatePagination(
+                  pageNumber: state.pageNumber,
+                  visibleCount: state.candidates.length,
+                  canGoPrevious: _vm.canGoToPreviousPage,
+                  canGoNext: _vm.canGoToNextPage,
+                  onPrevious: _vm.goToPreviousPage,
+                  onNext: _vm.goToNextPage,
+                ),
+              ),
+            ),
+          ],
         );
       },
+    );
+  }
+}
+
+class _CandidatePagination extends StatelessWidget {
+  const _CandidatePagination({
+    required this.pageNumber,
+    required this.visibleCount,
+    required this.canGoPrevious,
+    required this.canGoNext,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
+  final int pageNumber;
+  final int visibleCount;
+  final bool canGoPrevious;
+  final bool canGoNext;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      alignment: WrapAlignment.end,
+      children: [
+        Text('$pageNumberページ / $visibleCount件表示'),
+        OutlinedButton.icon(
+          onPressed: canGoPrevious ? onPrevious : null,
+          icon: const Icon(Icons.chevron_left),
+          label: const Text('前へ'),
+        ),
+        OutlinedButton.icon(
+          onPressed: canGoNext ? onNext : null,
+          icon: const Icon(Icons.chevron_right),
+          label: const Text('次へ'),
+        ),
+      ],
     );
   }
 }
